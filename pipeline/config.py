@@ -64,15 +64,24 @@ PRESETS = [
 # --- Estacions destacades ------------------------------------------------------
 #
 # El pipeline baixa les 241 estacions amb dades; aquesta llista nomes decideix
-# quines surten proposades per defecte al comparador. El criteri es cobrir
-# l'eix que motiva el projecte -- litoral urba, vessant, alcada, interior -- amb
-# series prou llargues.
+# quines surten proposades per defecte al comparador. Les desmantellades
+# segueixen sent consultables: el que no fan es sortir per defecte.
 #
-# Compte amb el que NO hi ha: la XEMA no te estacio a Montcada i Reixac, Sant
+# Nomes hi entren estacions OPERATIVES, i el motiu es concret: una comparacio
+# honesta retalla totes les series a la finestra que tenen en comu, aixi que
+# incloure una estacio que es va desmantellar el 2023 retallaria totes les
+# altres fins al 2023 i ens menjariem els dos anys mes calorosos de la serie.
+#
+# Compte amb el que NO hi ha. La XEMA no te estacio a Montcada i Reixac, Sant
 # Adria de Besos, Santa Coloma de Gramenet, Cornella, Sant Celoni, Reus, Santa
 # Pau ni Begur, i a Barcelona no hi ha ni Gracia/Sant Gervasi ni el Poblenou.
-# Es el mateix buit que va originar el projecte a Tiana: la xarxa es prima
-# precisament a l'area metropolitana densa.
+# Aquests noms son estacions de la XVPCA, la xarxa de vigilancia de la
+# contaminacio atmosferica, que es una altra xarxa i que **no mesura
+# temperatura**: nomes NO2, NO, O3, SO2, NOX, CO, PM10, PM2.5 i companyia. No
+# serveix per omplir aquest buit.
+#
+# I el buit es precisament l'area metropolitana densa, que es el mateix motiu
+# pel qual aquest projecte va comencar: a Tiana tampoc no hi ha estacio XEMA.
 
 FEATURED = [
     ("WU", "Badalona - Museu: urbà litoral"),
@@ -80,7 +89,6 @@ FEATURED = [
     ("D5", "Observatori Fabra: bosc d'alçada"),
     ("X4", "Barcelona - el Raval: urbà dens"),
     ("X8", "Barcelona - Zona Universitària"),
-    ("X2", "Barcelona - Zoo: la més propera al Poblenou, desmantellada el 2023"),
     ("XV", "Sant Cugat del Vallès - CAR"),
     ("XF", "Sabadell - Parc Agrari"),
     ("YM", "Granollers: sèrie curta, des del 2020"),
@@ -92,6 +100,7 @@ FEATURED = [
 # Anys complets minims perque una estacio destacada tingui sentit. Coincideix
 # amb el minim que demana Theil-Sen.
 FEATURED_MIN_YEARS = 5
+FEATURED_STATE = "Operativa"
 
 # Rang de bins (en graus enters) dels histogrames publicats per estacio i any.
 # Les temperatures fora d'aquest rang s'acumulen als extrems; cap llindar

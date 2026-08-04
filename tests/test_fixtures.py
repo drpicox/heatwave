@@ -241,6 +241,8 @@ def test_les_destacades_existeixen_i_serveixen():
         assert f["nom"], f["codi"]
         assert f["altitud"] is not None, f["codi"]
         assert f["anys_complets"] >= config.FEATURED_MIN_YEARS, f["codi"]
+        # Cap desmantellada: retallaria la finestra comuna de tota la comparacio.
+        assert f["estat"] == config.FEATURED_STATE, f["codi"]
 
 
 def test_estacions_no_encadenades(daily):

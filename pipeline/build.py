@@ -174,10 +174,15 @@ def build_featured(stations: pd.DataFrame, cov: pd.DataFrame) -> list[dict]:
     out, problems = [], []
     for code, why in config.FEATURED:
         n = counts.get(code, 0)
+        estat = (meta.get(code) or {}).get("nom_estat_ema")
         if code not in meta:
             problems.append(f"{code}: no surt a les metadades d'estacions")
         elif n < config.FEATURED_MIN_YEARS:
             problems.append(f"{code}: només {n} anys complets, en calen {config.FEATURED_MIN_YEARS}")
+        elif estat != config.FEATURED_STATE:
+            # Una estacio desmantellada retalla la finestra comuna de tota la
+            # comparacio. Segueix sent consultable, pero no per defecte.
+            problems.append(f"{code}: està {estat}, i les destacades han de ser {config.FEATURED_STATE}")
         else:
             m = meta[code]
             out.append(
