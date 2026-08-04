@@ -231,7 +231,7 @@ def test_no_publiquem_la_serie_diaria():
         lo, hi = config.VAR_INFO[var]["range"]
         # El limit surt del rang de cada variable, no d'un numero a l'atzar: la
         # pluja va de 0 a 250 mm i te molts mes bins que una temperatura.
-        maxim = int(round((hi - lo) / config.HIST_BIN))
+        maxim = int(round((hi - lo) / config.VAR_INFO[var]["bin"]))
         for any_, mesos in anys.items():
             assert set(mesos) <= {str(m) for m in range(1, 13)}, (var, any_)
             for hist in mesos.values():
@@ -268,7 +268,10 @@ def test_bins_de_mig_grau():
     justament on el control deixa aturar-se.
     """
     detail = _published("st/WU.json")
-    assert detail["bin"] == 0.5
+    # L'amplada de bin va per variable: la humitat en fa servir 1 %, on mig punt
+    # doblaria els intervals per a una precisio que ningu utilitza.
+    assert detail["bin"]["tn"] == 0.5
+    assert detail["bin"] == {k: v["bin"] for k, v in config.VAR_INFO.items()}
     anual = _published("hist-tn.json")
     assert anual["bin"] == 0.5
     for hist in anual["stations"]["WU"].values():

@@ -6,10 +6,31 @@
  */
 
 const MESOS_CA = ["gen", "feb", "mar", "abr", "mai", "jun", "jul", "ago", "set", "oct", "nov", "des"];
+const MESOS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MESOS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export const BANDERES = {
+  ca: '<svg viewBox="0 0 27 18" width="19" height="12.7"><rect width="27" height="18" fill="#fcdd09"/>' +
+      '<g fill="#da121a"><rect y="2" width="27" height="2"/><rect y="6" width="27" height="2"/>' +
+      '<rect y="10" width="27" height="2"/><rect y="14" width="27" height="2"/></g></svg>',
+  es: '<svg viewBox="0 0 27 18" width="19" height="12.7"><rect width="27" height="18" fill="#aa151b"/>' +
+      '<rect y="4.5" width="27" height="9" fill="#f1bf00"/></svg>',
+  en: '<svg viewBox="0 0 27 18" width="19" height="12.7"><rect width="27" height="18" fill="#012169"/>' +
+      '<path d="M0 0l27 18M27 0L0 18" stroke="#fff" stroke-width="3.6"/>' +
+      '<path d="M0 0l27 18M27 0L0 18" stroke="#c8102e" stroke-width="2.2"/>' +
+      '<path d="M13.5 0v18M0 9h27" stroke="#fff" stroke-width="6"/>' +
+      '<path d="M13.5 0v18M0 9h27" stroke="#c8102e" stroke-width="3.6"/></svg>',
+};
 
 export const I18N = {
   ca: {
+    presets: {
+      nit_tropical: "Nit tropical", nit_torrida: "Nit tòrrida", dia_estiu: "Dia d'estiu",
+      dia_caloros: "Dia calorós", dia_torrid: "Dia tòrrid", glacada: "Glaçada",
+      dia_pluja: "Dia de pluja", pluja_forta: "Pluja forta",
+      pluja_torrencial: "Pluja torrencial", intensa: "Pluja intensa",
+      molt_intensa: "Pluja molt intensa",
+    },
     nom: "Català",
     codi: "ca",
     eyebrow: (y0, y1) => `XEMA · METEOCAT · ${y0}–${y1}`,
@@ -41,6 +62,8 @@ export const I18N = {
       tx: { nom: "Temperatura màxima", curt: "màxima", nit: false },
       pp: { nom: "Precipitació diària", curt: "pluja", nit: false },
       pi: { nom: "Intensitat de pluja (màx. en 1 h)", curt: "intensitat", nit: false },
+      tm: { nom: "Temperatura mitjana", curt: "temperatura", nit: false },
+      hr: { nom: "Humitat relativa", curt: "humitat", nit: false },
     },
     nit: "nits", dia: "dies", any: "any",
     // Titol del segon panell segons com s'agrega la variable.
@@ -96,7 +119,7 @@ export const I18N = {
     saltCount: (a, b, d, u) => ` El salt: de ${a} a ${b} ${u}/any (${d}).`,
     saltMean: (a, b, d) => ` El salt: de ${a} a ${b} (${d}).`,
 
-    vistaEstacio: "Estació", vistaMapa: "Mapa",
+    lView: "Vista", vistaEstacio: "Estació", vistaMapa: "Mapa",
     carregant: "Carregant el mapa…",
     pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} amb ${cond} a tot Catalunya`,
     sMapa: (n) =>
@@ -104,6 +127,7 @@ export const I18N = {
       `període i l'època que tens triats. Clica'n una per obrir-la. Els punts són ` +
       `estacions, no un mapa continu: entre dos punts no hi ha dada, i cada estació ` +
       `té la seva altitud i el seu entorn.`,
+    sMapaFora: (n, m) => `S'hi han deixat fora ${n} estacions amb menys de ${m} anys complets al període: amb tan poca sèrie la mitjana és massa sorollosa per pintar-la igual que la resta.`,
     tableSummary: "Veure les dades en una taula",
     thYear: "Any", thDays: "Dies", thRest: "Resta", thMean: "Mitjana", thObs: "Obs.", thCov: "Cobertura",
 
@@ -121,7 +145,136 @@ export const I18N = {
       `<a href="${d.metodologia}">Metodologia</a> · <a href="${d.codi}">codi</a>.`,
   },
 
+  es: {
+    presets: {
+      nit_tropical: "Noche tropical", nit_torrida: "Noche tórrida", dia_estiu: "Día de verano",
+      dia_caloros: "Día caluroso", dia_torrid: "Día tórrido", glacada: "Helada",
+      dia_pluja: "Día de lluvia", pluja_forta: "Lluvia fuerte",
+      pluja_torrencial: "Lluvia torrencial", intensa: "Lluvia intensa",
+      molt_intensa: "Lluvia muy intensa",
+    },
+    nom: "Castellano",
+    codi: "es",
+    eyebrow: (y0, y1) => `XEMA · METEOCAT · ${y0}–${y1}`,
+    h1: "¿Cuántas noches al año pasa esto?",
+    lede: (n) =>
+      `Registros diarios de ${n} estaciones de Cataluña. Elige una estación, una variable y ` +
+      `un umbral, y la página cuenta los días que lo superan, año por año, y compara las ` +
+      `dos mitades de la serie.`,
+
+    lStation: "Estación meteorológica",
+    lVar: "Variable",
+    lOp: "Condición",
+    lThr: "Umbral",
+    lSeason: "Época del año",
+    lYears: "Años mostrados",
+    lSplit: "Punto de corte",
+    lPresets: "Indicadores",
+    // "menys de" i no "o menys": amb bins de mig grau nomes son exactes
+    // "per damunt o igual" i "per sota estricte". Vegeu METODOLOGIA.md.
+    opGe: "≥ o más",
+    opLt: "menos de",
+    hThr: "La franja coloreada son los días que cumplen la condición.",
+    hYears: "Recorta la serie para mirar de cerca un tramo concreto.",
+    hSplit: "Muévelo para probar dónde se rompe la serie: cada mitad recalcula su media.",
+    auto: "automático",
+
+    vars: {
+      tn: { nom: "Temperatura mínima", curt: "mínima", nit: true },
+      tx: { nom: "Temperatura máxima", curt: "máxima", nit: false },
+      pp: { nom: "Precipitación diaria", curt: "lluvia", nit: false },
+      pi: { nom: "Intensidad de lluvia (máx. en 1 h)", curt: "intensidad", nit: false },
+      tm: { nom: "Temperatura media", curt: "temperatura", nit: false },
+      hr: { nom: "Humedad relativa", curt: "humedad", nit: false },
+    },
+    nit: "noches", dia: "días", any: "año",
+    // Titol del segon panell segons com s'agrega la variable.
+    resum: { mean: "media", sum: "total", max: "máxima" },
+    secs: (pct) => `El ${pct} % de los días no llueve: el histograma solo muestra los días con lluvia.`,
+
+    seasons: {
+      any: "Todo el año",
+      estiu: "Verano (junio–agosto)",
+      cal: "Temporada cálida (mayo–octubre)",
+      hivern: "Invierno (diciembre–febrero)",
+      prim: "Primavera (marzo–mayo)",
+      tardor: "Otoño (septiembre–noviembre)",
+    },
+    seasonPhrase: {
+      any: "a lo largo de todo el año",
+      estiu: "de junio a agosto",
+      cal: "de mayo a octubre",
+      hivern: "de diciembre a febrero",
+      prim: "de marzo a mayo",
+      tardor: "de septiembre a noviembre",
+    },
+
+    plate: { station: "estación", muni: "municipio", alt: "altitud", serie: "serie", dies: "días", estat: "estado" },
+    desmantellada: "desmantelada",
+
+    heroCap: (periode, estacio) => `media ${periode} · ${estacio}`,
+    heroShort: "No hay suficientes años completos para comparar dos períodos.",
+    deltaVs: "respecto a",
+
+    sentence: (d) =>
+      `En <em>${d.estacio}</em>, ${d.unitat} con ${d.varCurt} ${d.cond} ${d.frase} han pasado ` +
+      `de <em>${d.a}</em> a <em>${d.b}</em> de media anual: ${d.verb}. ` +
+      `La ${d.varCurt} del período pasa de ${d.m0} a ${d.m1} (${d.dm}).`,
+    verbUp: "ha subido", verbDown: "ha bajado", verbFlat: "se ha mantenido",
+
+    tTotal: "Total en el tramo", tTotalSub: (n) => `de ${n} días con datos`,
+    tPeak: (u) => `Año con más ${u}`, tPartial: "año incompleto",
+    tHigh: "Valor más alto", tLow: "Valor más bajo", tAnual: "año entero",
+
+    pCount: (u, cond, frase) => `${u} amb ${cond}, any per any`,
+    sCount: "Cada barra es un año. Las líneas horizontales son la media de cada período.",
+    sCountStack: "La parte clara son los días del resto del año, fuera de la época seleccionada.",
+    lPeriod: "media del período", lRest: "resto del año", lPartial: "año incompleto",
+
+    pMean: (v, frase) => `${v} ${frase}, año por año`,
+    sMean: "Los años sin suficientes datos se omiten: una media de un tramo a medias no es comparable.",
+
+    pHeat: (u, cond) => `Reparto por meses: ${u} con ${cond}`,
+    sHeat: "Cada celda es un mes. Cuanto más oscura, más días cumplen la condición.",
+    sHeatRar: (llista) =>
+      ` Con recuadro, los meses donde esto casi nunca pasa: ${llista}.`,
+    saltCount: (a, b, d, u) => ` El salto: de ${a} a ${b} ${u}/año (${d}).`,
+    saltMean: (a, b, d) => ` El salto: de ${a} a ${b} (${d}).`,
+
+    lView: "Vista", vistaEstacio: "Estación", vistaMapa: "Mapa",
+    carregant: "Cargando el mapa…",
+    pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} con ${cond} en toda Cataluña`,
+    sMapa: (n) =>
+      `Cada punto es una de las ${n} estaciones, coloreada por la media anual del ` +
+      `período y la época seleccionados. Haz clic en una para abrirla. Son estaciones, ` +
+      `no un mapa continuo: entre dos puntos no hay dato, y cada estación tiene su ` +
+      `propia altitud y su entorno.`,
+    sMapaFora: (n, m) => `Se han dejado fuera ${n} estaciones con menos de ${m} años completos en el período: con tan poca serie la media es demasiado ruidosa para pintarla igual que el resto.`,
+    tableSummary: "Ver los datos en una tabla",
+    thYear: "Año", thDays: "Días", thRest: "Resto", thMean: "Media", thObs: "Obs.", thCov: "Cobertura",
+
+    noData: "Esta estación no tiene suficientes datos para esta selección.",
+    mesos: MESOS_ES,
+    footer: (d) =>
+      `Fuente: <b>Servei Meteorològic de Catalunya (XEMA)</b>. Datos abiertos de la Generalitat ` +
+      `de Catalunya. <a href="${d.dataset}">Conjunto de datos original</a> · ` +
+      `<a href="${d.crues}">datos brutos de esta estación</a> · ` +
+      `<a href="${d.legal}">aviso legal</a>.<br>` +
+      `Última actualización de la fuente: <span class="m">${d.font}</span>. ` +
+      `Agregados generados el <span class="m">${d.generat}</span>.<br>` +
+      `Las series <b>no están homogeneizadas</b> y no son datos científicos validados: los ` +
+      `cambios de instrumento o de entorno pueden producir saltos que no tienen nada que ver con el clima. ` +
+      `<a href="${d.metodologia}">Metodología</a> · <a href="${d.codi}">código</a>.`,
+  },
+
   en: {
+    presets: {
+      nit_tropical: "Tropical night", nit_torrida: "Torrid night", dia_estiu: "Summer day",
+      dia_caloros: "Hot day", dia_torrid: "Scorching day", glacada: "Frost day",
+      dia_pluja: "Rain day", pluja_forta: "Heavy rain",
+      pluja_torrencial: "Torrential rain", intensa: "Intense rain",
+      molt_intensa: "Very intense rain",
+    },
     nom: "English",
     codi: "en",
     eyebrow: (y0, y1) => `XEMA · METEOCAT · ${y0}–${y1}`,
@@ -151,6 +304,8 @@ export const I18N = {
       tx: { nom: "Maximum temperature", curt: "maximum", nit: false },
       pp: { nom: "Daily rainfall", curt: "rainfall", nit: false },
       pi: { nom: "Rain intensity (max in 1 h)", curt: "intensity", nit: false },
+      tm: { nom: "Mean temperature", curt: "temperature", nit: false },
+      hr: { nom: "Relative humidity", curt: "humidity", nit: false },
     },
     nit: "nights", dia: "days", any: "year",
     resum: { mean: "mean", sum: "total", max: "peak" },
@@ -204,7 +359,7 @@ export const I18N = {
     saltCount: (a, b, d, u) => ` The change: from ${a} to ${b} ${u}/year (${d}).`,
     saltMean: (a, b, d) => ` The change: from ${a} to ${b} (${d}).`,
 
-    vistaEstacio: "Station", vistaMapa: "Map",
+    lView: "View", vistaEstacio: "Station", vistaMapa: "Map",
     carregant: "Loading the map…",
     pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} with ${cond} across Catalonia`,
     sMapa: (n) =>
@@ -212,6 +367,7 @@ export const I18N = {
       `period and season you have selected. Click one to open it. These are stations, ` +
       `not a continuous map: between two dots there is no data, and each station has ` +
       `its own elevation and surroundings.`,
+    sMapaFora: (n, m) => `${n} stations with fewer than ${m} complete years in the period are left out: with so short a series the average is too noisy to paint like the rest.`,
     tableSummary: "See the data as a table",
     thYear: "Year", thDays: "Days", thRest: "Rest", thMean: "Mean", thObs: "Obs.", thCov: "Coverage",
 

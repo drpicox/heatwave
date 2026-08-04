@@ -15,6 +15,7 @@ import { SEASONS } from "./i18n.js";
 import { mostraTip, amagaTip, linia, titolTip } from "./grafics.js";
 
 let GEO = null, MAPA = {};
+const fora = new Set();
 
 export function dadesCarregades() {
   return GEO && MAPA[state.v];
@@ -35,8 +36,11 @@ export async function carrega(onProgres) {
   await Promise.all(feines);
 }
 
+const MIN_ANYS = 5;
+
 /** Mitjana anual de dies que compleixen la condició, per estació. */
 function valors() {
+  fora.clear();
   const font = MAPA[state.v];
   const w = font.bin;
   const mesos = SEASONS[state.season];
@@ -58,7 +62,11 @@ function valors() {
       // El mateix llistó que a la fitxa: un any a mitges no entra a la mitjana.
       if (esperats && obs / esperats >= 0.95) { hits += h; nAnys++; }
     }
-    if (nAnys) out.set(codi, { valor: hits / nAnys, anys: nAnys });
+    // Una estació amb dos anys complets dona una mitjana molt més sorollosa que
+    // una amb vint, i al mapa totes dues surten com un punt igual de rodó. Per
+    // sota d'aquest mínim no hi entra.
+    if (nAnys >= MIN_ANYS) out.set(codi, { valor: hits / nAnys, anys: nAnys });
+    else if (nAnys) fora.add(codi);
   }
   return out;
 }
@@ -149,7 +157,8 @@ export function dibuixa(onTria) {
   }
 
   document.getElementById("t-mapa").textContent = L().pMapa(unitat(), thrText());
-  document.getElementById("s-mapa").textContent = L().sMapa(punts.length);
+  document.getElementById("s-mapa").textContent =
+    L().sMapa(punts.length) + (fora.size ? " " + L().sMapaFora(fora.size, MIN_ANYS) : "");
 
   const leg = document.getElementById("l-mapa");
   buida(leg);

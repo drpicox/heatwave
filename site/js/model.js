@@ -29,7 +29,7 @@ export const totalHist = (h) => (h ? h.slice(1).reduce((a, b) => a + b, 0) : 0);
 /* --- model ---------------------------------------------------------------- */
 
 export function model() {
-  const w = ST.bin;
+  const w = (ST.bin && ST.bin[state.v]) ?? 0.5;
   const mesos = SEASONS[state.season];
   const dins = new Set(mesos);
   const hVar = ST.h[state.v] || {};

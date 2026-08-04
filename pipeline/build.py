@@ -139,6 +139,17 @@ def stations_for_web(cov: pd.DataFrame, today: dt.date | None = None) -> set[str
     return set(viu[viu >= limit].index) & set(recents["codi_estacio"].unique())
 
 
+def amb_metadades(stations: pd.DataFrame) -> set[str]:
+    """Estacions que la font descriu.
+
+    N'hi ha alguna (UG) amb anys de dades i cap fila de metadades: ni nom, ni
+    altitud, ni coordenades. Al selector surt com un codi solt i al mapa no s'hi
+    pot dibuixar. Es queda a l'arxiu, pero no al web.
+    """
+    ok = stations.dropna(subset=["latitud", "longitud"])
+    return set(ok["codi_estacio"])
+
+
 def build_index(stations: pd.DataFrame, cov: pd.DataFrame, keep: set[str]) -> list[dict]:
     """Index compacte: el minim per omplir el selector i situar l'estacio.
 
@@ -221,7 +232,7 @@ def build_details(daily: pd.DataFrame, cov: pd.DataFrame, presets: pd.DataFrame,
             "lon": m.get("longitud"),
             "emplacament": m.get("emplacament"),
             "estat": m.get("nom_estat_ema"),
-            "bin": config.HIST_BIN,
+            "bin": config.HIST_BINS,
             "anys": cobertura.get(code, {}),
             "h": hists,
             "m": means,
@@ -290,7 +301,7 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
     presets = metrics.preset_counts(daily)
     hists = metrics.histograms(daily)
 
-    keep = stations_for_web(cov)
+    keep = stations_for_web(cov) & amb_metadades(stations)
     log(f"  {len(keep)} estacions al web, "
         f"{cov['codi_estacio'].nunique() - len(keep)} excloses per no tenir dades recents")
 
@@ -305,7 +316,8 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
         lo, hi = config.HIST_RANGE[short]
         sizes[f"hist-{short}.json"] = _write(
             config.SITE_DATA / f"hist-{short}.json",
-            {"var": short, "bin": config.HIST_BIN, "range": [lo, hi], "stations": per_station},
+            {"var": short, "bin": config.HIST_BINS[short], "range": [lo, hi],
+             "stations": per_station},
         )
 
     # Agregat de totes les estacions alhora, per a la vista de mapa. Es un fitxer

@@ -70,9 +70,10 @@ def histograms(daily: pd.DataFrame) -> dict[str, dict[str, dict[int, list[int]]]
     """
     out: dict[str, dict[str, dict[int, list[int]]]] = {}
     for short, (lo, hi) in config.HIST_RANGE.items():
+        w = config.HIST_BINS[short]
         per_station: dict[str, dict[int, list[int]]] = {}
         for (code, year), grp in daily.groupby(["codi_estacio", "year"], sort=True):
-            h = histogram(grp[short], lo, hi)
+            h = histogram(grp[short], lo, hi, w)
             if h is not None:
                 per_station.setdefault(code, {})[int(year)] = h
         out[short] = per_station
@@ -103,9 +104,9 @@ def monthly_detail(grp: pd.DataFrame) -> tuple[dict, dict]:
         if short not in grp.columns:
             continue
         lo, hi = info["range"]
-        agg = info["agg"]
+        agg, w = info["agg"], info["bin"]
         for (year, month), sub in grp.groupby([grp["year"], grp["data"].dt.month]):
-            h = histogram(sub[short], lo, hi)
+            h = histogram(sub[short], lo, hi, w)
             if h is None:
                 continue
             serie = sub[short].dropna()

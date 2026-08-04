@@ -32,12 +32,15 @@ TMIN = 1002
 TMEAN = 1000
 PREC = 1300   # precipitacio acumulada diaria
 PINT = 1303   # precipitacio maxima en 1 h del dia
+HRMIT = 1100  # humitat relativa mitjana diaria
 
 VARIABLES = {
     TMIN: "tn",
     TMAX: "tx",
     PREC: "pp",
     PINT: "pi",
+    TMEAN: "tm",
+    HRMIT: "hr",
 }
 
 # Cada variable s'agrega diferent, i aquesta es la part que no es pot copiar de
@@ -62,6 +65,12 @@ VAR_INFO = {
            "range": (0, 250), "decimals": 1, "skewed": True},
     "pi": {"codi": PINT, "unitat": "mm/h", "agg": "max", "bin": 0.5,
            "range": (0, 100), "decimals": 1, "skewed": True},
+    "tm": {"codi": TMEAN, "unitat": "°C", "agg": "mean", "bin": 0.5,
+           "range": (-30, 40), "decimals": 1, "skewed": False},
+    # Un punt d'humitat relativa es de sobres: mig punt dobla els bins per a
+    # una precisio que ningu fa servir.
+    "hr": {"codi": HRMIT, "unitat": "%", "agg": "mean", "bin": 1.0,
+           "range": (0, 100), "decimals": 0, "skewed": False},
 }
 
 # Primer dia amb dada a tot el dataset (verificat: min(data_lectura) = 1988-09-01).
@@ -161,8 +170,9 @@ FEATURED_STATE = "Operativa"
 #
 # Les temperatures fora del rang s'acumulen als bins extrems, de manera que cap
 # dia es perd del recompte total. Cap llindar d'interes climatic hi cau a prop.
-HIST_BIN = 0.5
+HIST_BIN = 0.5   # per defecte; cada variable pot dir la seva a VAR_INFO
 HIST_RANGE = {k: v["range"] for k, v in VAR_INFO.items()}
+HIST_BINS = {k: v["bin"] for k, v in VAR_INFO.items()}
 
 # --- Atribucio ---------------------------------------------------------------
 #

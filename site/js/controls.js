@@ -4,7 +4,7 @@
  * pinta, nomes que alguna cosa ha canviat.
  */
 
-import { I18N, SEASONS } from "./i18n.js";
+import { I18N, SEASONS, BANDERES } from "./i18n.js";
 import { state, META, INDEX, ST, L, nf, thrText, buida, varInfo } from "./nucli.js";
 
 /* Els controls no coneixen el render: el reben a initControls i el guarden aquí.
@@ -44,7 +44,7 @@ export function textosFixos() {
   document.getElementById("x-h1").textContent = t.h1;
   document.getElementById("x-lede").textContent = t.lede(nf(INDEX.length));
   const set = (id, v) => { document.getElementById(id).textContent = v; };
-  set("x-l-station", t.lStation); set("x-l-var", t.lVar); set("x-l-op", t.lOp);
+  set("x-l-view", t.lView); set("x-l-station", t.lStation); set("x-l-var", t.lVar); set("x-l-op", t.lOp);
   set("x-l-thr", t.lThr); set("x-l-season", t.lSeason); set("x-l-years", t.lYears);
   set("x-l-split", t.lSplit); set("x-l-presets", t.lPresets);
   set("thr-help", t.hThr); set("x-h-years", t.hYears); set("x-h-split", t.hSplit);
@@ -76,7 +76,7 @@ export function textosFixos() {
     b.type = "button";
     b.className = "chip";
     const u = META.variables[p.var]?.unitat ?? "°C";
-    b.textContent = `${nomPreset(p)} ${p.op === ">=" ? "≥" : "<"} ${nf(p.value, 0)} ${u}`;
+    b.textContent = `${t.presets[p.id] || p.id} ${p.op === ">=" ? "≥" : "<"} ${nf(p.value, 0)} ${u}`;
     b.addEventListener("click", () => {
       state.v = p.var;
       state.op = p.op === ">=" ? "ge" : "lt";
@@ -85,22 +85,6 @@ export function textosFixos() {
     });
     pl.append(b);
   }
-}
-
-export function nomPreset(p) {
-  const noms = {
-    ca: { nit_tropical: "Nit tropical", nit_torrida: "Nit tòrrida", dia_estiu: "Dia d'estiu",
-          dia_caloros: "Dia calorós", dia_torrid: "Dia tòrrid", glacada: "Glaçada",
-          dia_pluja: "Dia de pluja", pluja_forta: "Pluja forta",
-          pluja_torrencial: "Pluja torrencial", intensa: "Pluja intensa",
-          molt_intensa: "Pluja molt intensa" },
-    en: { nit_tropical: "Tropical night", nit_torrida: "Torrid night", dia_estiu: "Summer day",
-          dia_caloros: "Hot day", dia_torrid: "Scorching day", glacada: "Frost day",
-          dia_pluja: "Rain day", pluja_forta: "Heavy rain",
-          pluja_torrencial: "Torrential rain", intensa: "Intense rain",
-          molt_intensa: "Very intense rain" },
-  };
-  return noms[state.lang][p.id] || p.id;
 }
 
 export function sincronitza() {
@@ -233,6 +217,7 @@ export function initControls(render, carregaEstacio) {
   });
 
   const vg = document.getElementById("view-group");
+  buida(vg);
   for (const v of ["estacio", "mapa"]) {
     const b = document.createElement("button");
     b.type = "button";
@@ -246,7 +231,11 @@ export function initControls(render, carregaEstacio) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.dataset.lang = k;
-    btn.textContent = v.nom;
+    // La bandera és SVG en línia d'una constant nostra, no text de ningú altre.
+    const fl = document.createElement("span");
+    fl.className = "flag";
+    fl.innerHTML = BANDERES[k] ?? "";
+    btn.append(fl, document.createTextNode(v.nom));
     btn.addEventListener("click", () => { state.lang = k; textosFixos(); render(); });
     lg.append(btn);
   }
