@@ -61,6 +61,38 @@ PRESETS = [
     {"id": "glacada", "var": "tn", "op": "<=", "value": 0},
 ]
 
+# --- Estacions destacades ------------------------------------------------------
+#
+# El pipeline baixa les 241 estacions amb dades; aquesta llista nomes decideix
+# quines surten proposades per defecte al comparador. El criteri es cobrir
+# l'eix que motiva el projecte -- litoral urba, vessant, alcada, interior -- amb
+# series prou llargues.
+#
+# Compte amb el que NO hi ha: la XEMA no te estacio a Montcada i Reixac, Sant
+# Adria de Besos, Santa Coloma de Gramenet, Cornella, Sant Celoni, Reus, Santa
+# Pau ni Begur, i a Barcelona no hi ha ni Gracia/Sant Gervasi ni el Poblenou.
+# Es el mateix buit que va originar el projecte a Tiana: la xarxa es prima
+# precisament a l'area metropolitana densa.
+
+FEATURED = [
+    ("WU", "Badalona - Museu: urbà litoral"),
+    ("UP", "Cabrils: vessant marítim semirural"),
+    ("D5", "Observatori Fabra: bosc d'alçada"),
+    ("X4", "Barcelona - el Raval: urbà dens"),
+    ("X8", "Barcelona - Zona Universitària"),
+    ("X2", "Barcelona - Zoo: la més propera al Poblenou, desmantellada el 2023"),
+    ("XV", "Sant Cugat del Vallès - CAR"),
+    ("XF", "Sabadell - Parc Agrari"),
+    ("YM", "Granollers: sèrie curta, des del 2020"),
+    ("XE", "Tarragona - Complex Educatiu: l'antiga Universitat Laboral"),
+    ("XJ", "Girona: als Horts de Santa Eugènia, no al parc de la Devesa"),
+    ("VK", "Raimat: la sèrie llarga del pla de Lleida"),
+]
+
+# Anys complets minims perque una estacio destacada tingui sentit. Coincideix
+# amb el minim que demana Theil-Sen.
+FEATURED_MIN_YEARS = 5
+
 # Rang de bins (en graus enters) dels histogrames publicats per estacio i any.
 # Les temperatures fora d'aquest rang s'acumulen als extrems; cap llindar
 # d'interes climatic hi cau a prop.

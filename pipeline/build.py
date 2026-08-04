@@ -158,6 +158,51 @@ def build_details(daily: pd.DataFrame, presets: pd.DataFrame) -> dict[str, dict]
     return out
 
 
+def build_featured(stations: pd.DataFrame, cov: pd.DataFrame) -> list[dict]:
+    """Comprova les estacions destacades i les resol a metadades.
+
+    Es una llista escrita a ma, i les llistes escrites a ma envelleixen: una
+    estacio es desmantella, una altra deixa de passar el control de qualitat.
+    Aixi que aqui es verifica, i si alguna cosa no quadra el pipeline s'atura en
+    comptes de publicar un comparador amb una estacio buida.
+    """
+    meta = stations.set_index("codi_estacio").to_dict("index")
+    complete = cov[cov["complete"]].groupby("codi_estacio")["year"]
+    counts = complete.size().to_dict()
+    first, last = complete.min().to_dict(), complete.max().to_dict()
+
+    out, problems = [], []
+    for code, why in config.FEATURED:
+        n = counts.get(code, 0)
+        if code not in meta:
+            problems.append(f"{code}: no surt a les metadades d'estacions")
+        elif n < config.FEATURED_MIN_YEARS:
+            problems.append(f"{code}: només {n} anys complets, en calen {config.FEATURED_MIN_YEARS}")
+        else:
+            m = meta[code]
+            out.append(
+                {
+                    "codi": code,
+                    "nom": m.get("nom_estacio"),
+                    "altitud": m.get("altitud"),
+                    "emplacament": m.get("emplacament"),
+                    "estat": m.get("nom_estat_ema"),
+                    "anys_complets": int(n),
+                    "des_de": int(first[code]),
+                    "fins_a": int(last[code]),
+                    "per_que": why,
+                }
+            )
+
+    if problems:
+        raise RuntimeError(
+            "Estacions destacades que ja no serveixen:\n  "
+            + "\n  ".join(problems)
+            + "\nRevisa config.FEATURED."
+        )
+    return out
+
+
 def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
               log=print) -> dict:
     config.SITE_DATA.mkdir(parents=True, exist_ok=True)
@@ -211,6 +256,7 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
             "per_station_url": source_url("<CODI>"),
         },
         "presets": config.PRESETS,
+        "featured": build_featured(stations, cov),
         "hist_range": config.HIST_RANGE,
         "qc": quality.summary(cov),
         "estat_check": estat_report,

@@ -228,6 +228,21 @@ def test_no_publiquem_la_serie_diaria():
     assert "codi_estacio='WU'" in detail["source_url"]
 
 
+def test_les_destacades_existeixen_i_serveixen():
+    """Una llista escrita a ma envelleix: aixo avisa quan ho fa.
+
+    Cada estacio destacada ha d'existir, tenir altitud i prou anys complets per
+    poder-hi calcular una tendencia.
+    """
+    featured = _published("meta.json")["featured"]
+    codes = {f["codi"] for f in featured}
+    assert codes == {c for c, _ in config.FEATURED}
+    for f in featured:
+        assert f["nom"], f["codi"]
+        assert f["altitud"] is not None, f["codi"]
+        assert f["anys_complets"] >= config.FEATURED_MIN_YEARS, f["codi"]
+
+
 def test_estacions_no_encadenades(daily):
     """DH i WU son dues estacions de Badalona, i han de continuar sent-ho.
 
