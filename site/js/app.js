@@ -35,7 +35,6 @@ async function carregaEstacio(codi) {
 
 function render() {
   sincronitza();
-  document.documentElement.setAttribute("data-view", state.view);
   const m = model();
 
   // L'ordre importa: els panells escriuen els subtítols i els gràfics hi
@@ -43,15 +42,16 @@ function render() {
   dibuixaText(m);
   dibuixaHist(m);
 
-  if (state.view === "mapa") {
-    if (mapa.dadesCarregades()) mapa.dibuixa(triaDelMapa);
-    else carregaMapa();
-  } else {
-    dibuixaCount(m);
-    dibuixaMean(m);
-    dibuixaHeat(m);
-    dibuixaTaula(m);
-  }
+  dibuixaCount(m);
+  dibuixaMean(m);
+  dibuixaHeat(m);
+  dibuixaTaula(m);
+
+  // El mapa i els panells son la mateixa vista, pero el mapa pesa molt mes.
+  // Es dibuixa quan te les dades i mentrestant la resta de la pagina ja
+  // funciona: no te sentit fer esperar ningu per un fitxer que potser ni mira.
+  if (mapa.dadesCarregades()) mapa.dibuixa(triaDelMapa);
+  else carregaMapa();
 
   document.getElementById("split-val").textContent =
     `${m.tall ?? "—"}${state.split == null ? " · " + L().auto : ""}`;
@@ -59,10 +59,10 @@ function render() {
   escriuHash();
 }
 
-/** Clicar una estació al mapa obre la seva fitxa: el mapa és per triar. */
+/** Clicar una estació al mapa canvia els panells. El mapa no es mou: el lector
+ *  acaba de triar allà i perdre-li el lloc seria hostil. */
 async function triaDelMapa(codi) {
   state.st = codi;
-  state.view = "estacio";
   state.y0 = state.y1 = null;
   await carregaEstacio(codi);
   render();

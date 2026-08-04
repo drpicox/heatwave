@@ -128,11 +128,9 @@ export const I18N = {
     carregant: "Carregant el mapa…",
     pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} amb ${cond} a tot Catalunya`,
     sMapa: (n) =>
-      `Cada punt és una de les ${n} estacions, acolorida per la mitjana anual del ` +
-      `període i l'època que tens triats. Clica'n una per obrir-la. Els punts són ` +
-      `estacions, no un mapa continu: entre dos punts no hi ha dada, i cada estació ` +
-      `té la seva altitud i el seu entorn.`,
-    sMapaFora: (n, m) => `S'hi han deixat fora ${n} estacions amb menys de ${m} anys complets al període: amb tan poca sèrie la mitjana és massa sorollosa per pintar-la igual que la resta.`,
+      `${n} estacions, acolorides per la consulta. Clica'n una. Són punts, no un ` +
+      `mapa continu: entre dos punts no hi ha dada.`,
+    sMapaFora: (n, m) => ` ${n} amb menys de ${m} anys complets no hi surten.`,
     tableSummary: "Veure les dades en una taula",
     thYear: "Any", thDays: "Dies", thRest: "Resta", thMean: "Mitjana", thObs: "Obs.", thCov: "Cobertura",
 
@@ -255,11 +253,9 @@ export const I18N = {
     carregant: "Cargando el mapa…",
     pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} con ${cond} en toda Cataluña`,
     sMapa: (n) =>
-      `Cada punto es una de las ${n} estaciones, coloreada por la media anual del ` +
-      `período y la época seleccionados. Haz clic en una para abrirla. Son estaciones, ` +
-      `no un mapa continuo: entre dos puntos no hay dato, y cada estación tiene su ` +
-      `propia altitud y su entorno.`,
-    sMapaFora: (n, m) => `Se han dejado fuera ${n} estaciones con menos de ${m} años completos en el período: con tan poca serie la media es demasiado ruidosa para pintarla igual que el resto.`,
+      `${n} estaciones, coloreadas por la consulta. Haz clic en una. Son puntos, no ` +
+      `un mapa continuo: entre dos puntos no hay dato.`,
+    sMapaFora: (n, m) => ` ${n} con menos de ${m} años completos no aparecen.`,
     tableSummary: "Ver los datos en una tabla",
     thYear: "Año", thDays: "Días", thRest: "Resto", thMean: "Media", thObs: "Obs.", thCov: "Cobertura",
 
@@ -378,11 +374,9 @@ export const I18N = {
     carregant: "Loading the map…",
     pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} with ${cond} across Catalonia`,
     sMapa: (n) =>
-      `Each dot is one of the ${n} stations, coloured by the yearly average for the ` +
-      `period and season you have selected. Click one to open it. These are stations, ` +
-      `not a continuous map: between two dots there is no data, and each station has ` +
-      `its own elevation and surroundings.`,
-    sMapaFora: (n, m) => `${n} stations with fewer than ${m} complete years in the period are left out: with so short a series the average is too noisy to paint like the rest.`,
+      `${n} stations, coloured by the current query. Click one. These are dots, not a ` +
+      `continuous map: between two dots there is no data.`,
+    sMapaFora: (n, m) => ` ${n} with fewer than ${m} complete years are left out.`,
     tableSummary: "See the data as a table",
     thYear: "Year", thDays: "Days", thRest: "Rest", thMean: "Mean", thObs: "Obs.", thCov: "Coverage",
 

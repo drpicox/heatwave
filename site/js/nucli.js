@@ -24,7 +24,6 @@ export const state = {
   season: "any",
   y0: null, y1: null,
   split: null,   // null = automàtic (la meitat de la sèrie)
-  view: "estacio",  // "estacio" | "mapa"
 };
 
 /* Dades carregades. S'assignen des de dades.js i tothom qui les importi veu

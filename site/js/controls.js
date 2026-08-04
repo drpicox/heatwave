@@ -44,7 +44,7 @@ export function textosFixos() {
   document.getElementById("x-h1").textContent = t.h1;
   document.getElementById("x-lede").textContent = t.lede(nf(INDEX.length));
   const set = (id, v) => { document.getElementById(id).textContent = v; };
-  set("x-l-view", t.lView); set("x-l-station", t.lStation); set("x-l-var", t.lVar); set("x-l-op", t.lOp);
+  set("x-l-station", t.lStation); set("x-l-var", t.lVar); set("x-l-op", t.lOp);
   set("x-l-thr", t.lThr); set("x-l-season", t.lSeason); set("x-l-years", t.lYears);
   set("x-l-split", t.lSplit); set("x-l-presets", t.lPresets);
   set("thr-help", t.hThr); set("x-h-years", t.hYears); set("x-h-split", t.hSplit);
@@ -104,10 +104,6 @@ export function sincronitza() {
     b.setAttribute("aria-pressed", String(
       p.var === state.v && (p.op === ">=" ? "ge" : "lt") === state.op && p.value === state.thr));
   }
-  for (const b of document.querySelectorAll("#view-group button")) {
-    b.textContent = b.dataset.view === "mapa" ? t.vistaMapa : t.vistaEstacio;
-    b.setAttribute("aria-pressed", String(b.dataset.view === state.view));
-  }
   for (const b of document.querySelectorAll("#lang-group button")) {
     b.setAttribute("aria-pressed", String(b.dataset.lang === state.lang));
   }
@@ -144,7 +140,6 @@ export function llegeixHash() {
     if (a && b) { state.y0 = a; state.y1 = b; }
   }
   if (p.get("split")) state.split = +p.get("split");
-  if (p.get("view") === "mapa") state.view = "mapa";
 }
 
 export function escriuHash() {
@@ -153,7 +148,6 @@ export function escriuHash() {
     season: state.season, y: `${state.y0}-${state.y1}`, lang: state.lang,
   });
   if (state.split != null) p.set("split", String(state.split));
-  if (state.view !== "estacio") p.set("view", state.view);
   history.replaceState(null, "", "#" + p.toString());
 }
 
@@ -215,16 +209,6 @@ export function initControls(render, carregaEstacio) {
     textosFixos();
     render();
   });
-
-  const vg = document.getElementById("view-group");
-  buida(vg);
-  for (const v of ["estacio", "mapa"]) {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.dataset.view = v;
-    b.addEventListener("click", () => { state.view = v; render(); });
-    vg.append(b);
-  }
 
   const lg = document.getElementById("lang-group");
   for (const [k, v] of Object.entries(I18N)) {
