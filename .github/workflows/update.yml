@@ -1,0 +1,73 @@
+name: Actualitza les dades i publica
+
+on:
+  schedule:
+    # Dilluns a les 05:10 UTC. La XEMA va un parell de dies enrere, aixi que no
+    # te sentit mirar-ho mes sovint.
+    - cron: "10 5 * * 1"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # per fer commit dels agregats regenerats
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # El cache de dades crues no es versiona. Sense ell, cada execucio
+      # tornaria a baixar 38 anys de la XEMA; amb ell, nomes els dos anys que
+      # el pipeline considera oberts.
+      - uses: actions/cache@v4
+        with:
+          path: cache
+          key: xema-cache-${{ github.run_id }}
+          restore-keys: xema-cache-
+
+      - name: Baixa, calcula i escriu site/data
+        env:
+          SOCRATA_APP_TOKEN: ${{ secrets.SOCRATA_APP_TOKEN }}
+        run: ./dothething
+
+      - name: Comprova les fixtures
+        run: ./dothething --test
+
+      - name: Fes commit dels agregats si han canviat
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- site/data; then
+            echo "cap canvi als agregats"
+          else
+            git add site/data
+            git commit -m "dades: actualitzacio automatica ($(date -u +%Y-%m-%d))"
+            git push
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

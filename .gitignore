@@ -1,0 +1,9 @@
+# Dades crues descarregades de Socrata. No es versionen: es reconstrueixen
+# amb ./dothething i pesen centenars de MB.
+cache/
+
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store

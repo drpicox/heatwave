@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nits de calor a Catalunya</title>
+<style>
+  :root { color-scheme: light dark; --fg:#16110d; --bg:#fdfbf7; --dim:#6d635a; --line:#e2dbd0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg:#f2ede6; --bg:#14100c; --dim:#9d9288; --line:#2c2620; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:3rem 1.5rem; background:var(--bg); color:var(--fg);
+         font:16px/1.65 ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  main { max-width: 40rem; margin:0 auto; }
+  h1 { font-size:1.9rem; line-height:1.2; margin:0 0 .6rem; letter-spacing:-.02em; }
+  .lead { font-size:1.1rem; color:var(--dim); margin:0 0 2.5rem; }
+  .note { border-left:3px solid var(--line); padding:.2rem 0 .2rem 1rem; margin:2rem 0;
+          color:var(--dim); }
+  footer { margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--line);
+           font-size:.875rem; color:var(--dim); }
+  a { color:inherit; text-underline-offset:.2em; }
+  ul { padding-left:1.1rem; }
+  li { margin:.35rem 0; }
+  code { font-size:.9em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Nits de calor a Catalunya</h1>
+  <p class="lead">Quantes nits de calor fa cada any a cada estació de la XEMA, com
+  evoluciona, i si l'escalfament nocturn depèn de l'altitud i de l'entorn.</p>
+
+  <div class="note">
+    <p><strong>En construcció.</strong> El pipeline de dades ja funciona i els agregats
+    d'aquest lloc estan generats i verificats. La interfície encara no hi és.</p>
+  </div>
+
+  <p>Mentrestant, les dades i la metodologia ja són públiques:</p>
+  <ul>
+    <li><a href="data/meta.json">meta.json</a> — dates, atribució i comptadors del control de qualitat</li>
+    <li><a href="data/stations.json">stations.json</a> — les 241 estacions amb dades i la seva cobertura any a any</li>
+    <li><a href="https://github.com/drpicox/heatwave/blob/main/docs/METODOLOGIA.md">METODOLOGIA.md</a> — què es compta, què es descarta i per què</li>
+    <li><a href="https://github.com/drpicox/heatwave/blob/main/docs/FONTS.md">FONTS.md</a> — datasets, condicions d'ús i atribució</li>
+  </ul>
+
+  <p>Aquest lloc publica agregats derivats, no una còpia de les dades del Meteocat.
+  Les dades brutes es descarreguen de la font original.</p>
+
+  <footer>
+    <p>Font: Servei Meteorològic de Catalunya (XEMA). Dades obertes de la Generalitat
+    de Catalunya. Consulteu l'<a href="https://www.meteo.cat/wpweb/avis-legal/">avís
+    legal</a>.</p>
+    <p id="updated"></p>
+    <p>Les sèries no estan homogeneïtzades i no són dades científiques validades.</p>
+  </footer>
+</main>
+<script type="module">
+  // L'avis legal exigeix indicar la data de la darrera actualitzacio de la font.
+  const el = document.getElementById('updated');
+  try {
+    const meta = await (await fetch('data/meta.json')).json();
+    const fmt = new Intl.DateTimeFormat('ca-ES', { dateStyle: 'long', timeStyle: 'short' });
+    el.textContent = `Darrera actualització de la font: ${fmt.format(new Date(meta.source_last_updated))}. `
+                   + `Agregats generats el ${fmt.format(new Date(meta.generated_at))}.`;
+  } catch {
+    el.remove();
+  }
+</script>
+</body>
+</html>
