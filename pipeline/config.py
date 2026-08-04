@@ -5,6 +5,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / "cache"
 DAILY_CACHE = CACHE / "daily"
+# Les variables derivades no es poden reconstruir sense tornar a baixar 54
+# milions de files, i ocupen poc. Van al repositori, no al cache.
+DERIVED_DIR = ROOT / "derived"
 SITE_DATA = ROOT / "site" / "data"
 STATION_DATA = SITE_DATA / "st"
 

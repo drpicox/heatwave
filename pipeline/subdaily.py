@@ -191,7 +191,7 @@ def build_daily(years, log=print) -> int:
         diari = diari[diari["lectures"] >= 36].drop(columns=["lectures"])
         diari["estat"] = pd.Series(["Representatiu"] * len(diari), dtype="category")
 
-        out = config.DAILY_CACHE / f"wb-{year}.parquet"
+        out = config.DERIVED_DIR / f"wb-{year}.parquet"
         out.parent.mkdir(parents=True, exist_ok=True)
         diari[["codi_estacio", "data", "valor", "estat"]].to_parquet(out, index=False)
         escrits += 1

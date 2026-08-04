@@ -70,6 +70,10 @@ def histograms(daily: pd.DataFrame) -> dict[str, dict[str, dict[int, list[int]]]
     """
     out: dict[str, dict[str, dict[int, list[int]]]] = {}
     for short, (lo, hi) in config.HIST_RANGE.items():
+        # Una variable derivada pot no estar calculada. No es motiu per aturar
+        # tot el pipeline: simplement no surt.
+        if short not in daily.columns:
+            continue
         w = config.HIST_BINS[short]
         per_station: dict[str, dict[int, list[int]]] = {}
         for (code, year), grp in daily.groupby(["codi_estacio", "year"], sort=True):
@@ -162,10 +166,13 @@ def preset_counts(daily: pd.DataFrame) -> pd.DataFrame:
     quan va ser la primera i l'ultima nit tropical de cada any, que es una cosa
     que l'histograma no sap (no guarda dates).
     """
+    # Les dreceres d'una variable que no s'ha calculat no es poden comptar.
+    presets = [p for p in config.PRESETS if p["var"] in daily.columns]
+
     rows = []
     for (code, year), grp in daily.groupby(["codi_estacio", "year"], sort=True):
         row = {"codi_estacio": code, "year": int(year)}
-        for preset in config.PRESETS:
+        for preset in presets:
             var, op, value = preset["var"], preset["op"], preset["value"]
             series = grp[var]
             hit = series >= value if op == ">=" else series < value

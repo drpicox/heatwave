@@ -199,7 +199,7 @@ def build_details(daily: pd.DataFrame, cov: pd.DataFrame, presets: pd.DataFrame,
         for _, r in grp.iterrows():
             for preset in config.PRESETS:
                 pid = preset["id"]
-                if r.get(f"{pid}_first"):
+                if f"{pid}_first" in r and r.get(f"{pid}_first"):
                     p.setdefault(pid, {})[str(int(r["year"]))] = [
                         r[f"{pid}_first"], r[f"{pid}_last"],
                     ]
@@ -326,6 +326,8 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
     details = build_details(daily, cov, presets, stations, keep)
     # Les derivades tambe: el bulb humit no es baixa, pero al mapa hi ha de ser.
     for short in list(config.VARIABLES.values()) + sorted(config.DERIVADES):
+        if short not in hists:
+            continue
         lo, hi = config.HIST_RANGE[short]
         sizes[f"map-{short}.json"] = _write(
             config.SITE_DATA / f"map-{short}.json",
@@ -361,7 +363,9 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
         # seva distribució està esbiaixada cap al zero: així afegir-ne una no
         # obliga a tocar el codi del navegador.
         "variables": {
-            k: {**v, "range": list(v["range"])} for k, v in config.VAR_INFO.items()
+            k: {**v, "range": list(v["range"])}
+            for k, v in config.VAR_INFO.items()
+            if k in hists
         },
         "raw_data": {
             "policy": (
@@ -371,7 +375,7 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
             ),
             "per_station_url": source_url("<CODI>"),
         },
-        "presets": config.PRESETS,
+        "presets": [p for p in config.PRESETS if p["var"] in hists],
         "featured": build_featured(stations, cov),
         "hist_range": config.HIST_RANGE,
         "qc": quality.summary(cov),

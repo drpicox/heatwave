@@ -79,6 +79,8 @@ site/               el web estàtic
   data/             sortida versionada (JSON)
 docs/               METODOLOGIA.md, FONTS.md
 tests/              fixtures verificades contra l'API
+derived/            bulb humit diari ja calculat (es versiona: derivar-lo
+                    demana baixar 54 milions de files del semihorari)
 cache/              dades crues descarregades (no es versiona)
 ```
 
