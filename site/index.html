@@ -17,6 +17,7 @@
       <p id="x-lede"></p>
     </div>
     <div class="masthead-side">
+      <div class="seg" role="group" id="view-group" aria-label="Vista"></div>
       <div class="seg langs" role="group" id="lang-group" aria-label="Idioma"></div>
       <div class="plate" id="plate"></div>
     </div>
@@ -87,7 +88,15 @@
     </div>
   </section>
 
-  <section class="readout" aria-live="polite">
+  <section class="panel nomes-mapa" id="panel-mapa">
+    <div class="panel-head">
+      <div><h2 id="t-mapa"></h2><p class="sub" id="s-mapa"></p></div>
+      <div class="scale-legend" id="l-mapa"></div>
+    </div>
+    <div class="chart" id="c-mapa"><svg></svg><div class="tip"></div></div>
+  </section>
+
+  <section class="readout nomes-estacio" aria-live="polite">
     <div>
       <div class="hero-fig" id="hero-fig"></div>
       <div class="hero-cap" id="hero-cap"></div>
@@ -96,9 +105,9 @@
     <p class="sentence" id="sentence"></p>
   </section>
 
-  <section class="tiles" id="tiles"></section>
+  <section class="tiles nomes-estacio" id="tiles"></section>
 
-  <section class="panel">
+  <section class="panel nomes-estacio">
     <div class="panel-head">
       <div><h2 id="t-count"></h2><p class="sub" id="s-count"></p></div>
       <div class="legend" id="l-count"></div>
@@ -106,7 +115,7 @@
     <div class="chart" id="c-count"><svg></svg><div class="tip"></div></div>
   </section>
 
-  <section class="panel">
+  <section class="panel nomes-estacio">
     <div class="panel-head">
       <div><h2 id="t-mean"></h2><p class="sub" id="s-mean"></p></div>
       <div class="legend" id="l-mean"></div>
@@ -114,7 +123,7 @@
     <div class="chart" id="c-mean"><svg></svg><div class="tip"></div></div>
   </section>
 
-  <section class="panel">
+  <section class="panel nomes-estacio">
     <div class="panel-head">
       <div><h2 id="t-heat"></h2><p class="sub" id="s-heat"></p></div>
       <div class="scale-legend" id="l-heat"></div>
@@ -122,7 +131,7 @@
     <div class="chart" id="c-heat"><svg></svg><div class="tip"></div></div>
   </section>
 
-  <details class="tableview">
+  <details class="tableview nomes-estacio">
     <summary id="x-table-summary"></summary>
     <div class="table-body"><div class="tscroll"><table id="tabla">
       <thead><tr id="t-head"></tr></thead><tbody></tbody>

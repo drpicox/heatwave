@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import http.server
+import json
 import socketserver
 import sys
 import time
@@ -41,6 +42,8 @@ def main(argv=None):
     p.add_argument("--allow-unknown-estat", action="store_true",
                    help="continua encara que el camp `estat` porti valors nous")
     p.add_argument("--skip-fetch", action="store_true", help="nomes recalcula des del cache")
+    p.add_argument("--geo", action="store_true",
+                   help="refa el contorn de comarques (els limits no canvien mai)")
     p.add_argument("--serve", action="store_true")
     p.add_argument("--port", type=int, default=8000)
     args = p.parse_args(argv)
@@ -101,6 +104,17 @@ def main(argv=None):
     print(f"    {s['station_years_complete']:,} anys-estacio complets, "
           f"{s['station_years_partial']:,} parcials "
           f"(dels quals {s['station_years_ongoing']:,} en curs)")
+
+    # Els limits administratius no canvien: nomes es refan si falten o si es
+    # demana explicitament, per no baixar 25 MB cada setmana per res.
+    geo_path = config.SITE_DATA / "comarques.json"
+    if args.geo or not geo_path.exists():
+        print("==> contorn de comarques")
+        from . import geo
+        geo_path.parent.mkdir(parents=True, exist_ok=True)
+        geo_path.write_text(
+            json.dumps(geo.build(client), ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8")
 
     print("==> escrivint site/data")
     build.build_all(daily, stations, cov, estat_report, filter_report, source_updated)

@@ -19,6 +19,7 @@ import { dibuixaText, dibuixaTaula, peu } from "./panells.js";
 import {
   omplirEstacions, textosFixos, sincronitza, llegeixHash, escriuHash, initControls,
 } from "./controls.js";
+import * as mapa from "./mapa.js";
 
 /** Baixa la fitxa d'una estació i encaixa el rang d'anys al que realment té. */
 async function carregaEstacio(codi) {
@@ -34,21 +35,56 @@ async function carregaEstacio(codi) {
 
 function render() {
   sincronitza();
+  document.documentElement.setAttribute("data-view", state.view);
   const m = model();
 
   // L'ordre importa: els panells escriuen els subtítols i els gràfics hi
   // afegeixen després el salt i els mesos excepcionals que han trobat pintant.
   dibuixaText(m);
   dibuixaHist(m);
-  dibuixaCount(m);
-  dibuixaMean(m);
-  dibuixaHeat(m);
-  dibuixaTaula(m);
+
+  if (state.view === "mapa") {
+    if (mapa.dadesCarregades()) mapa.dibuixa(triaDelMapa);
+    else carregaMapa();
+  } else {
+    dibuixaCount(m);
+    dibuixaMean(m);
+    dibuixaHeat(m);
+    dibuixaTaula(m);
+  }
 
   document.getElementById("split-val").textContent =
     `${m.tall ?? "—"}${state.split == null ? " · " + L().auto : ""}`;
   peu();
   escriuHash();
+}
+
+/** Clicar una estació al mapa obre la seva fitxa: el mapa és per triar. */
+async function triaDelMapa(codi) {
+  state.st = codi;
+  state.view = "estacio";
+  state.y0 = state.y1 = null;
+  await carregaEstacio(codi);
+  render();
+}
+
+let carregant = false;
+async function carregaMapa() {
+  if (carregant) return;
+  carregant = true;
+  const host = document.getElementById("c-mapa");
+  const avis = document.createElement("div");
+  avis.className = "carregant";
+  avis.textContent = L().carregant;
+  host.querySelector("svg").replaceChildren();
+  host.append(avis);
+  try {
+    await mapa.carrega();
+    mapa.dibuixa(triaDelMapa);
+  } finally {
+    avis.remove();
+    carregant = false;
+  }
 }
 
 (async function () {

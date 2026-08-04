@@ -7,6 +7,12 @@
 import { I18N, SEASONS } from "./i18n.js";
 import { state, META, INDEX, ST, L, nf, thrText, buida } from "./nucli.js";
 
+/* Els controls no coneixen el render: el reben a initControls i el guarden aquí.
+ * Sense això, els gestors que es creen fora d'initControls -- els xips de
+ * dreceres es construeixen a textosFixos, perquè canvien amb l'idioma -- es
+ * quedaven sense la funció i petaven en silenci després d'haver mogut l'estat. */
+let redibuixa = () => {};
+
 export function omplirEstacions() {
   const sel = document.getElementById("f-station");
   buida(sel);
@@ -71,7 +77,7 @@ export function textosFixos() {
       state.v = p.var;
       state.op = p.op === ">=" ? "ge" : "lt";
       state.thr = p.value;
-      render();
+      redibuixa();
     });
     pl.append(b);
   }
@@ -103,6 +109,10 @@ export function sincronitza() {
     const p = META.presets[[...b.parentNode.children].indexOf(b)];
     b.setAttribute("aria-pressed", String(
       p.var === state.v && (p.op === ">=" ? "ge" : "lt") === state.op && p.value === state.thr));
+  }
+  for (const b of document.querySelectorAll("#view-group button")) {
+    b.textContent = b.dataset.view === "mapa" ? t.vistaMapa : t.vistaEstacio;
+    b.setAttribute("aria-pressed", String(b.dataset.view === state.view));
   }
   for (const b of document.querySelectorAll("#lang-group button")) {
     b.setAttribute("aria-pressed", String(b.dataset.lang === state.lang));
@@ -138,6 +148,7 @@ export function llegeixHash() {
     if (a && b) { state.y0 = a; state.y1 = b; }
   }
   if (p.get("split")) state.split = +p.get("split");
+  if (p.get("view") === "mapa") state.view = "mapa";
 }
 
 export function escriuHash() {
@@ -146,12 +157,14 @@ export function escriuHash() {
     season: state.season, y: `${state.y0}-${state.y1}`, lang: state.lang,
   });
   if (state.split != null) p.set("split", String(state.split));
+  if (state.view !== "estacio") p.set("view", state.view);
   history.replaceState(null, "", "#" + p.toString());
 }
 
 /* --- render ------------------------------------------------------------------ */
 
 export function initControls(render, carregaEstacio) {
+  redibuixa = render;
   document.getElementById("f-station").addEventListener("change", async (e) => {
     state.st = e.target.value;
     state.y0 = state.y1 = null;
@@ -197,6 +210,15 @@ export function initControls(render, carregaEstacio) {
     textosFixos();
     render();
   });
+
+  const vg = document.getElementById("view-group");
+  for (const v of ["estacio", "mapa"]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.view = v;
+    b.addEventListener("click", () => { state.view = v; render(); });
+    vg.append(b);
+  }
 
   const lg = document.getElementById("lang-group");
   for (const [k, v] of Object.entries(I18N)) {

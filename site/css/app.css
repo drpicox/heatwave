@@ -361,3 +361,20 @@ footer .m { font-family: var(--mono); }
   .masthead-side { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------- les dues vistes ---------- */
+
+:root[data-view="mapa"] .nomes-estacio,
+:root:not([data-view="mapa"]) .nomes-mapa { display: none; }
+
+#c-mapa svg { max-height: 62vh; }
+#c-mapa .hit { cursor: pointer; }
+
+.carregant {
+  padding: 3rem 0;
+  text-align: center;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+}

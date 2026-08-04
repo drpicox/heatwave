@@ -91,6 +91,14 @@ export const I18N = {
     saltCount: (a, b, d, u) => ` El salt: de ${a} a ${b} ${u}/any (${d}).`,
     saltMean: (a, b, d) => ` El salt: de ${a} a ${b} °C (${d}).`,
 
+    vistaEstacio: "Estació", vistaMapa: "Mapa",
+    carregant: "Carregant el mapa…",
+    pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} amb ${cond} a tot Catalunya`,
+    sMapa: (n) =>
+      `Cada punt és una de les ${n} estacions, acolorida per la mitjana anual del ` +
+      `període i l'època que tens triats. Clica'n una per obrir-la. Els punts són ` +
+      `estacions, no un mapa continu: entre dos punts no hi ha dada, i cada estació ` +
+      `té la seva altitud i el seu entorn.`,
     tableSummary: "Veure les dades en una taula",
     thYear: "Any", thDays: "Dies", thRest: "Resta", thMean: "Mitjana", thObs: "Obs.", thCov: "Cobertura",
 
@@ -187,6 +195,14 @@ export const I18N = {
     saltCount: (a, b, d, u) => ` The change: from ${a} to ${b} ${u}/year (${d}).`,
     saltMean: (a, b, d) => ` The change: from ${a} to ${b} °C (${d}).`,
 
+    vistaEstacio: "Station", vistaMapa: "Map",
+    carregant: "Loading the map…",
+    pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} with ${cond} across Catalonia`,
+    sMapa: (n) =>
+      `Each dot is one of the ${n} stations, coloured by the yearly average for the ` +
+      `period and season you have selected. Click one to open it. These are stations, ` +
+      `not a continuous map: between two dots there is no data, and each station has ` +
+      `its own elevation and surroundings.`,
     tableSummary: "See the data as a table",
     thYear: "Year", thDays: "Days", thRest: "Rest", thMean: "Mean", thObs: "Obs.", thCov: "Coverage",
 

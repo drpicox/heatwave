@@ -308,7 +308,17 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
             {"var": short, "bin": config.HIST_BIN, "range": [lo, hi], "stations": per_station},
         )
 
+    # Agregat de totes les estacions alhora, per a la vista de mapa. Es un fitxer
+    # gros i la pagina nomes el baixa quan obres el mapa; l'explorador d'estacio
+    # no el toca. Per variable, perque nomes se'n mira una a la vegada.
     details = build_details(daily, cov, presets, stations, keep)
+    for short in config.VARIABLES.values():
+        lo, hi = config.HIST_RANGE[short]
+        sizes[f"map-{short}.json"] = _write(
+            config.SITE_DATA / f"map-{short}.json",
+            {"var": short, "bin": config.HIST_BIN, "range": [lo, hi],
+             "stations": {c: d["h"].get(short, {}) for c, d in details.items()}},
+        )
     config.STATION_DATA.mkdir(parents=True, exist_ok=True)
     # Neteja les estacions que hagin desaparegut de la font, perque no quedin
     # fitxers orfes al repo dient coses que ja no diem.

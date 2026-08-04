@@ -120,10 +120,30 @@ El que sí que es publica:
 
 | fitxer | què és |
 |---|---|
-| `data/index.json` | l'imprescindible de cada estació per al selector (~40 KB) |
+| `data/index.json` | l'imprescindible de cada estació per al selector (~35 KB) |
 | `data/st/<CODI>.json` | la fitxa sencera d'una estació (~36 KB) |
 | `data/meta.json` | dates, atribució i comptadors del control de qualitat |
+| `data/comarques.json` | contorn comarcal simplificat, per a la vista de mapa |
+| `data/map-*.json` | histogrames mensuals de totes les estacions, per a la vista de mapa |
 | `data/stations.json`, `data/hist-*.json` | agregats de totes les estacions alhora, per a comparacions futures |
+
+### La vista de mapa es paga a part
+
+L'explorador d'una estació carrega uns 16 KB de dades. La vista de mapa en
+necessita moltes més —el contorn i els histogrames de les 182 estacions—, i per
+això **només es baixen quan obres el mapa**: 34 KB del contorn i uns 550 KB dels
+histogrames, un sol cop per sessió. Qui no obri el mapa no ho paga.
+
+El contorn ve de [Límits administratius
+comarcals](https://analisi.transparenciacatalunya.cat/d/aasi-gwnd), que en cru
+són 661.514 vèrtexs i 25,7 MB. Simplificat amb Douglas-Peucker a 0,002° (uns
+222 m) queden 6.855 vèrtexs, i a l'escala a què es dibuixa l'error és inferior a
+un píxel.
+
+**El mapa són punts, no una superfície.** Entre dues estacions no hi ha dada, i
+cada estació té la seva altitud i el seu entorn. Un mapa de colors continu
+convidaria a llegir «aquí fa més calor» quan el que hi ha són 182 mesures en
+llocs molt diferents, amb sèries que no estan homogeneïtzades.
 
 La pàgina només carrega l'índex i **una** fitxa: uns 16 KB comprimits. La fitxa
 porta, per a cada any, els histogrames i les mitjanes **mes a mes**, la cobertura
