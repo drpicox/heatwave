@@ -4,69 +4,123 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nits de calor a Catalunya</title>
-<style>
-  :root { color-scheme: light dark; --fg:#16110d; --bg:#fdfbf7; --dim:#6d635a; --line:#e2dbd0; }
-  @media (prefers-color-scheme: dark) {
-    :root { --fg:#f2ede6; --bg:#14100c; --dim:#9d9288; --line:#2c2620; }
-  }
-  * { box-sizing: border-box; }
-  body { margin:0; padding:3rem 1.5rem; background:var(--bg); color:var(--fg);
-         font:16px/1.65 ui-sans-serif, system-ui, -apple-system, sans-serif; }
-  main { max-width: 40rem; margin:0 auto; }
-  h1 { font-size:1.9rem; line-height:1.2; margin:0 0 .6rem; letter-spacing:-.02em; }
-  .lead { font-size:1.1rem; color:var(--dim); margin:0 0 2.5rem; }
-  .note { border-left:3px solid var(--line); padding:.2rem 0 .2rem 1rem; margin:2rem 0;
-          color:var(--dim); }
-  footer { margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--line);
-           font-size:.875rem; color:var(--dim); }
-  a { color:inherit; text-underline-offset:.2em; }
-  ul { padding-left:1.1rem; }
-  li { margin:.35rem 0; }
-  code { font-size:.9em; }
-</style>
+<meta name="description" content="Com evolucionen les nits de calor a les estacions de la XEMA, i si l'escalfament nocturn depèn de l'altitud.">
+<link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <main>
-  <h1>Nits de calor a Catalunya</h1>
-  <p class="lead">Quantes nits de calor fa cada any a cada estació de la XEMA, com
-  evoluciona, i si l'escalfament nocturn depèn de l'altitud i de l'entorn.</p>
 
-  <div class="note">
-    <p><strong>En construcció.</strong> El pipeline de dades ja funciona i els agregats
-    d'aquest lloc estan generats i verificats. La interfície encara no hi és.</p>
+  <h1>L'escalfament nocturn no va igual a tot arreu</h1>
+  <p class="lead">
+    A <span id="stations-count">—</span> estacions de la XEMA, des del 1988. Tria què vols
+    mesurar —el ritme d'escalfament de les nits d'estiu, o quantes nits superen un
+    llindar— i mira si el canvi té res a veure amb l'altitud de l'estació.
+  </p>
+
+  <!-- Una sola fila de controls, i afecta tot el que hi ha per sota. -->
+  <div class="controls" role="group" aria-label="Filtres">
+    <div class="control">
+      <span class="label" id="lbl-met">Què es mesura</span>
+      <div class="segmented" id="met-seg" role="group" aria-labelledby="lbl-met"></div>
+    </div>
+
+    <div class="control">
+      <span class="label" id="lbl-var">Variable</span>
+      <div class="segmented" id="var-seg" role="group" aria-labelledby="lbl-var"></div>
+    </div>
+
+    <div class="control" id="llindar-control">
+      <label class="label" for="llindar">Llindar</label>
+      <div class="threshold">
+        <input type="range" id="llindar" min="-10" max="42" step="1" value="20">
+        <output id="llindar-out" for="llindar">≥ 20 °C</output>
+      </div>
+    </div>
+
+    <div class="control">
+      <span class="label" id="lbl-win">Període</span>
+      <div class="segmented" id="win-seg" role="group" aria-labelledby="lbl-win"></div>
+    </div>
+
+    <div class="control control-wide">
+      <span class="label" id="lbl-pre">Dreceres</span>
+      <div class="presets" id="presets" role="group" aria-labelledby="lbl-pre"></div>
+    </div>
   </div>
 
-  <p>Mentrestant, les dades i la metodologia ja són públiques:</p>
-  <ul>
-    <li><a href="data/meta.json">meta.json</a> — dates, atribució i comptadors del control de qualitat</li>
-    <li><a href="data/stations.json">stations.json</a> — les 241 estacions amb dades i la seva cobertura any a any</li>
-    <li><a href="https://github.com/drpicox/heatwave/blob/main/docs/METODOLOGIA.md">METODOLOGIA.md</a> — què es compta, què es descarta i per què</li>
-    <li><a href="https://github.com/drpicox/heatwave/blob/main/docs/FONTS.md">FONTS.md</a> — datasets, condicions d'ús i atribució</li>
-  </ul>
+  <section class="hero">
+    <p class="figure" id="hero-figure">—</p>
+    <p class="caption" id="hero-caption"></p>
+    <div class="windows" id="windows"></div>
+  </section>
 
-  <p>Aquest lloc publica agregats derivats, no una còpia de les dades del Meteocat.
-  Les dades brutes es descarreguen de la font original.</p>
+  <p class="note">
+    Una tendència no vol dir res sense el seu període. Una sèrie que comença el 2006 no
+    inclou els anys plans dels noranta, i per això surt més inclinada <em>pel simple fet
+    de començar més tard</em>. Per això els dos períodes es calculen sempre tots dos, i
+    cada estació ha de tenir complets almenys el 90 % dels anys del període per entrar-hi.
+  </p>
 
-  <footer>
-    <p>Font: Servei Meteorològic de Catalunya (XEMA). Dades obertes de la Generalitat
-    de Catalunya. Consulteu l'<a href="https://www.meteo.cat/wpweb/avis-legal/">avís
-    legal</a>.</p>
-    <p id="updated"></p>
-    <p>Les sèries no estan homogeneïtzades i no són dades científiques validades.</p>
-  </footer>
+  <section class="card">
+    <h2 id="scatter-title">Tendència contra altitud</h2>
+    <p class="sub">Cada punt és una estació. <span id="hint">Clica un punt per veure la sèrie completa d'aquella estació.</span></p>
+    <div class="legend">
+      <span><i class="key" style="background:var(--accent)"></i> Estacions destacades</span>
+      <span><i class="key" style="background:var(--muted);opacity:.55"></i> Resta d'estacions</span>
+    </div>
+    <div class="chart" id="scatter"></div>
+    <div class="tip" id="tip" role="status" aria-live="polite"></div>
+    <p class="note" id="avis-zero" hidden>
+      Compte amb la fila d'estacions clavades al zero: no és que no s'escalfin, és que
+      <strong>mai no arriben al llindar</strong> i el comptador no es pot moure. Un recompte
+      mesura impacte; per comparar altituds, la mitjana d'estiu és la mètrica honesta.
+    </p>
+    <details>
+      <summary>Veure les dades en una taula</summary>
+      <div class="tablewrap">
+        <table id="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Estació</th>
+              <th scope="col">Altitud (m)</th>
+              <th scope="col" id="th-tend">Tendència</th>
+              <th scope="col" id="th-mitj">Mitjana</th>
+              <th scope="col">Anys</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section class="card" id="station-card" hidden>
+    <h2 id="station-name"></h2>
+    <p class="sub" id="station-meta"></p>
+    <div class="chart" id="station-chart"></div>
+    <p class="sub" id="station-caption"></p>
+    <button type="button" id="tancar" class="seg-like">Tornar a totes les estacions</button>
+  </section>
+
 </main>
-<script type="module">
-  // L'avis legal exigeix indicar la data de la darrera actualitzacio de la font.
-  const el = document.getElementById('updated');
-  try {
-    const meta = await (await fetch('data/meta.json')).json();
-    const data = new Intl.DateTimeFormat('ca-ES', { dateStyle: 'long' });
-    const moment = new Intl.DateTimeFormat('ca-ES', { dateStyle: 'long', timeStyle: 'short' });
-    el.textContent = `Darrera actualització de la font: ${moment.format(new Date(meta.source_last_updated))}. `
-                   + `Agregats generats el ${data.format(new Date(meta.generated_at))}.`;
-  } catch {
-    el.remove();
-  }
-</script>
+
+<footer>
+  <p>
+    Font: Servei Meteorològic de Catalunya (XEMA). Dades obertes de la Generalitat de
+    Catalunya. Consulteu l'<a href="https://www.meteo.cat/wpweb/avis-legal/">avís legal</a>
+    i el <a href="https://analisi.transparenciacatalunya.cat/d/7bvh-jvq2">conjunt de dades original</a>.
+  </p>
+  <p id="updated"></p>
+  <p>
+    Les sèries <strong>no estan homogeneïtzades</strong> i no són dades científiques
+    validades: els canvis d'instrument o d'entorn de l'estació poden produir salts que no
+    tenen res a veure amb el clima.
+    Vegeu la <a href="https://github.com/drpicox/heatwave/blob/main/docs/METODOLOGIA.md">metodologia</a>,
+    les <a href="https://github.com/drpicox/heatwave/blob/main/docs/FONTS.md">fonts</a>
+    i el <a href="https://github.com/drpicox/heatwave">codi</a>.
+  </p>
+</footer>
+
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

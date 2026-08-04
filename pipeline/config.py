@@ -58,7 +58,9 @@ PRESETS = [
     {"id": "dia_estiu", "var": "tx", "op": ">=", "value": 25},
     {"id": "dia_caloros", "var": "tx", "op": ">=", "value": 30},
     {"id": "dia_torrid", "var": "tx", "op": ">=", "value": 35},
-    {"id": "glacada", "var": "tn", "op": "<=", "value": 0},
+    # `<` i no `<=`: amb bins semioberts [k, k+1) nomes "per damunt o igual" i
+    # "per sota estricte" es poden respondre exactament. Vegeu METODOLOGIA.md.
+    {"id": "glacada", "var": "tn", "op": "<", "value": 0},
 ]
 
 # --- Estacions destacades ------------------------------------------------------
