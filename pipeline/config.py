@@ -30,10 +30,38 @@ PAGE_SIZE = 50_000
 TMAX = 1001
 TMIN = 1002
 TMEAN = 1000
+PREC = 1300   # precipitacio acumulada diaria
+PINT = 1303   # precipitacio maxima en 1 h del dia
 
 VARIABLES = {
     TMIN: "tn",
     TMAX: "tx",
+    PREC: "pp",
+    PINT: "pi",
+}
+
+# Cada variable s'agrega diferent, i aquesta es la part que no es pot copiar de
+# la temperatura:
+#
+#   mean  la mitjana d'un mes de minimes te sentit.
+#   sum   la mitjana de mil.limetres diaris no vol dir res; el que vols es el
+#         total caigut al mes.
+#   max   d'una intensitat, el resum d'un mes es la punta, no la suma ni la
+#         mitjana: el que importa es com de fort va ploure el pitjor dia.
+#
+# `skewed` marca les variables on la majoria de dies valen zero. A Badalona
+# nomes plou el 21% dels dies, aixi que l'histograma del llindar es una barra
+# gegant al zero i res mes si no es tracta a part.
+
+VAR_INFO = {
+    "tn": {"codi": TMIN, "unitat": "°C", "agg": "mean", "bin": 0.5,
+           "range": (-30, 35), "decimals": 1, "skewed": False},
+    "tx": {"codi": TMAX, "unitat": "°C", "agg": "mean", "bin": 0.5,
+           "range": (-25, 50), "decimals": 1, "skewed": False},
+    "pp": {"codi": PREC, "unitat": "mm", "agg": "sum", "bin": 0.5,
+           "range": (0, 250), "decimals": 1, "skewed": True},
+    "pi": {"codi": PINT, "unitat": "mm/h", "agg": "max", "bin": 0.5,
+           "range": (0, 100), "decimals": 1, "skewed": True},
 }
 
 # Primer dia amb dada a tot el dataset (verificat: min(data_lectura) = 1988-09-01).
@@ -61,6 +89,13 @@ PRESETS = [
     # `<` i no `<=`: amb bins semioberts [k, k+1) nomes "per damunt o igual" i
     # "per sota estricte" es poden respondre exactament. Vegeu METODOLOGIA.md.
     {"id": "glacada", "var": "tn", "op": "<", "value": 0},
+    {"id": "dia_pluja", "var": "pp", "op": ">=", "value": 1},
+    {"id": "pluja_forta", "var": "pp", "op": ">=", "value": 20},
+    {"id": "pluja_torrencial", "var": "pp", "op": ">=", "value": 50},
+    # El senyal climatic de la pluja es mes a la intensitat que al total: no
+    # tant quanta aigua cau com de fort cau.
+    {"id": "intensa", "var": "pi", "op": ">=", "value": 10},
+    {"id": "molt_intensa", "var": "pi", "op": ">=", "value": 20},
 ]
 
 # --- Quines estacions arriben al web -------------------------------------------
@@ -127,7 +162,7 @@ FEATURED_STATE = "Operativa"
 # Les temperatures fora del rang s'acumulen als bins extrems, de manera que cap
 # dia es perd del recompte total. Cap llindar d'interes climatic hi cau a prop.
 HIST_BIN = 0.5
-HIST_RANGE = {"tn": (-30, 35), "tx": (-25, 50)}
+HIST_RANGE = {k: v["range"] for k, v in VAR_INFO.items()}
 
 # --- Atribucio ---------------------------------------------------------------
 #

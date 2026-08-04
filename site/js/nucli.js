@@ -48,7 +48,10 @@ export const signed = (x, d = 1) => (x > 0 ? "+" : x < 0 ? "−" : "±") + nf(Ma
 
 export const opSym = () => (state.op === "ge" ? "≥" : "<");
 
-export const thrText = () => `${opSym()} ${nf(state.thr, 1)} °C`;
+/** Informació de la variable seleccionada: unitat, agregació, si és esbiaixada. */
+export const varInfo = () => (META?.variables?.[state.v]) ?? { unitat: "°C", agg: "mean", decimals: 1 };
+export const unitatVar = () => varInfo().unitat;
+export const thrText = () => `${opSym()} ${nf(state.thr, varInfo().decimals)} ${unitatVar()}`;
 
 export const diesMes = (y, m) => new Date(Date.UTC(y, m, 0)).getUTCDate();
 

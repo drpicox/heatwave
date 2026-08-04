@@ -5,7 +5,7 @@
  */
 
 import { I18N, SEASONS } from "./i18n.js";
-import { state, META, INDEX, ST, L, nf, thrText, buida } from "./nucli.js";
+import { state, META, INDEX, ST, L, nf, thrText, buida, varInfo } from "./nucli.js";
 
 /* Els controls no coneixen el render: el reben a initControls i el guarden aquí.
  * Sense això, els gestors que es creen fora d'initControls -- els xips de
@@ -53,7 +53,10 @@ export function textosFixos() {
 
   const fv = document.getElementById("f-var");
   buida(fv);
-  for (const k of ["tn", "tx"]) {
+  // Les variables surten de meta.json: afegir-ne una al pipeline no obliga a
+  // tocar aquesta llista, que és el que havia passat amb la pluja.
+  for (const k of Object.keys(META.variables)) {
+    if (!t.vars[k]) continue;
     const o = document.createElement("option");
     o.value = k; o.textContent = t.vars[k].nom;
     fv.append(o);
@@ -72,7 +75,8 @@ export function textosFixos() {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "chip";
-    b.textContent = `${nomPreset(p)} ${p.op === ">=" ? "≥" : "<"} ${nf(p.value, 0)} °C`;
+    const u = META.variables[p.var]?.unitat ?? "°C";
+    b.textContent = `${nomPreset(p)} ${p.op === ">=" ? "≥" : "<"} ${nf(p.value, 0)} ${u}`;
     b.addEventListener("click", () => {
       state.v = p.var;
       state.op = p.op === ">=" ? "ge" : "lt";
@@ -86,9 +90,15 @@ export function textosFixos() {
 export function nomPreset(p) {
   const noms = {
     ca: { nit_tropical: "Nit tropical", nit_torrida: "Nit tòrrida", dia_estiu: "Dia d'estiu",
-          dia_caloros: "Dia calorós", dia_torrid: "Dia tòrrid", glacada: "Glaçada" },
+          dia_caloros: "Dia calorós", dia_torrid: "Dia tòrrid", glacada: "Glaçada",
+          dia_pluja: "Dia de pluja", pluja_forta: "Pluja forta",
+          pluja_torrencial: "Pluja torrencial", intensa: "Pluja intensa",
+          molt_intensa: "Pluja molt intensa" },
     en: { nit_tropical: "Tropical night", nit_torrida: "Torrid night", dia_estiu: "Summer day",
-          dia_caloros: "Hot day", dia_torrid: "Scorching day", glacada: "Frost day" },
+          dia_caloros: "Hot day", dia_torrid: "Scorching day", glacada: "Frost day",
+          dia_pluja: "Rain day", pluja_forta: "Heavy rain",
+          pluja_torrencial: "Torrential rain", intensa: "Intense rain",
+          molt_intensa: "Very intense rain" },
   };
   return noms[state.lang][p.id] || p.id;
 }
@@ -139,7 +149,9 @@ export function llegeixHash() {
   const p = new URLSearchParams(location.hash.slice(1));
   if (p.get("lang") && I18N[p.get("lang")]) state.lang = p.get("lang");
   if (p.get("st")) state.st = p.get("st");
-  if (p.get("v")) state.v = p.get("v") === "tx" ? "tx" : "tn";
+  // Qualsevol variable que el pipeline publiqui, no només les dues primeres:
+  // amb la llista escrita a mà, afegir la pluja deixava els enllaços trencats.
+  if (p.get("v") && META.variables[p.get("v")]) state.v = p.get("v");
   if (p.get("op")) state.op = p.get("op") === "lt" ? "lt" : "ge";
   if (p.get("thr")) state.thr = +p.get("thr");
   if (p.get("season") && SEASONS[p.get("season")]) state.season = p.get("season");
@@ -172,7 +184,16 @@ export function initControls(render, carregaEstacio) {
     render();
   });
   document.getElementById("f-var").addEventListener("change", (e) => {
-    state.v = e.target.value; render();
+    const abans = state.v;
+    state.v = e.target.value;
+    // Passar de graus a mil.límetres amb el mateix número seria absurd: en
+    // canviar de família de variable, el llindar va a la drecera per defecte.
+    const familia = (v) => (v === "tn" || v === "tx" ? "temp" : "pluja");
+    if (familia(abans) !== familia(state.v)) {
+      const p = META.presets.find((x) => x.var === state.v);
+      if (p) { state.op = p.op === ">=" ? "ge" : "lt"; state.thr = p.value; }
+    }
+    render();
   });
   document.getElementById("f-season").addEventListener("change", (e) => {
     state.season = e.target.value; render();

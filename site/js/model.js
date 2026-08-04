@@ -5,7 +5,7 @@
  */
 
 import { SEASONS } from "./i18n.js";
-import { state, ST, COMPLETESA, diesMes } from "./nucli.js";
+import { state, ST, COMPLETESA, diesMes, varInfo } from "./nucli.js";
 
 /** Dies que compleixen la condició, a partir d'un histograma dispers.
  *
@@ -35,6 +35,7 @@ export function model() {
   const hVar = ST.h[state.v] || {};
   const mVar = ST.m[state.v] || {};
 
+  const agg = varInfo().agg ?? "mean";
   const files = [];
   for (const any of Object.keys(hVar).map(Number).sort((a, b) => a - b)) {
     if (any < state.y0 || any > state.y1) continue;
@@ -42,6 +43,7 @@ export function model() {
     const mitjanes = mVar[String(any)] || {};
 
     let hit = 0, hitTot = 0, obs = 0, obsTot = 0, suma = 0, esperats = 0;
+    let total = 0, punta = null;
     const cel = {};
     for (let m = 1; m <= 12; m++) {
       const h = perMes[String(m)];
@@ -52,7 +54,14 @@ export function model() {
         obs += n; hit += c;
         esperats += diesMes(any, m);
         const mm = mitjanes[String(m)];
-        if (mm != null) suma += mm * n;
+        if (mm != null) {
+          // Cada variable es combina com toca. Amb la pluja, la mitjana
+          // ponderada dels totals mensuals no és res: el valor de l'any és la
+          // suma. I d'una intensitat, la punta és la més gran de les puntes.
+          suma += mm * n;
+          total += mm;
+          punta = punta == null ? mm : Math.max(punta, mm);
+        }
       }
       cel[m] = { n, c };
     }
@@ -61,7 +70,10 @@ export function model() {
     files.push({
       any, hit, obs, cobertura, cel,
       resta: Math.max(0, hitTot - hit),
-      mitjana: obs ? suma / obs : null,
+      mitjana: !obs ? null
+        : agg === "sum" ? total
+        : agg === "max" ? punta
+        : suma / obs,
       // Un any en curs no és incomplet per manca de dades: és que no s'ha acabat.
       encurs: !!(ST.anys[String(any)] || {}).og,
       complet: cobertura >= COMPLETESA && !(ST.anys[String(any)] || {}).og,

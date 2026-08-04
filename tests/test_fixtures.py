@@ -228,11 +228,14 @@ def test_no_publiquem_la_serie_diaria():
     assert "codi_estacio='WU'" in detail["source_url"]
 
     for var, anys in detail["h"].items():
+        lo, hi = config.VAR_INFO[var]["range"]
+        # El limit surt del rang de cada variable, no d'un numero a l'atzar: la
+        # pluja va de 0 a 250 mm i te molts mes bins que una temperatura.
+        maxim = int(round((hi - lo) / config.HIST_BIN))
         for any_, mesos in anys.items():
             assert set(mesos) <= {str(m) for m in range(1, 13)}, (var, any_)
-            # Un histograma mensual no pot tenir mes bins que el rang sencer.
             for hist in mesos.values():
-                assert len(hist) - 1 <= 140, (var, any_)
+                assert len(hist) - 1 <= maxim, (var, any_, len(hist) - 1, maxim)
 
     # Cap llista de la fitxa no pot tenir llargada de mes de dotze mesos.
     def prohibeix_series_diaries(node, cami=""):

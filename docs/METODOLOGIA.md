@@ -37,6 +37,42 @@ Per això la fitxa de cada estació indica, per a cada any, **quants d'aquests
 episodis han caigut fora de juny–setembre**, i quina ha estat la primera i
 l'última data de l'any.
 
+### Pluja: cada variable s'agrega diferent
+
+Amb la precipitació no serveix copiar el que es fa amb la temperatura, i aquesta
+és la part que cal entendre.
+
+| variable | codi XEMA | com es resumeix un mes |
+|---|---|---|
+| temperatura mínima / màxima | `1002` / `1001` | **mitjana** |
+| precipitació diària | `1300` | **total** |
+| intensitat màxima en 1 h | `1303` | **màxima** |
+
+La mitjana de mil·límetres diaris d'un mes no vol dir res: el que es vol saber és
+quanta aigua hi va caure, i els totals se sumen. I d'una intensitat, el resum
+d'un mes no és ni la suma ni la mitjana sinó **la punta**: importa com de fort va
+ploure el pitjor dia.
+
+Per això el segon panell canvia de forma segons la variable. Una mitjana de
+temperatures no comença a zero i va amb línia; un total de mil·límetres i una
+punta d'intensitat sí que hi comencen, i van amb barres. Dibuixar un total amb
+línia i l'eix retallat exageraria diferències petites.
+
+### L'histograma de la pluja amaga els dies secs
+
+A Badalona només plou el 21 % dels dies. Si l'histograma del llindar dibuixés el
+interval del zero, la barra taparia tota la resta i no es veuria res de la
+distribució que de fet estàs tallant. Per a la pluja i la intensitat, l'interval
+del zero **no es dibuixa** i el text diu quin percentatge de dies són secs.
+
+### Per què la intensitat i no només el total
+
+El senyal climàtic de la precipitació és molt més clar a la **intensitat** que al
+total acumulat: no tant quanta aigua cau en un any com de fort cau quan cau. La
+variable `1303` publica la precipitació màxima registrada en una hora de cada
+dia, amb la mateixa cobertura que el total diari i des del 1988, de manera que es
+pot preguntar directament quants dies l'any superen una intensitat determinada.
+
 ### Amplitud tèrmica
 
 La variable `1004` de la XEMA (amplitud tèrmica diària) no es descarrega: s'ha

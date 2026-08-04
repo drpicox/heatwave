@@ -34,7 +34,14 @@ directament a la font.
 
 El web és un explorador: tries una estació, una variable i un llindar, i compta
 els dies que el superen any per any, partint la sèrie en dues meitats per veure
-com ha canviat. Tot es calcula al navegador, així que moure el llindar no torna
+com ha canviat. Hi ha quatre variables — mínima, màxima, pluja diària i
+**intensitat de pluja** (màxima en una hora) — i una vista de mapa amb totes les
+estacions alhora.
+
+El senyal climàtic de la pluja és més a la intensitat que al total. A
+Badalona-Museu, de 2006–2015 a 2016–2025, la pluja total baixa de 496,6 a
+471,1 mm i la punta d'intensitat anual puja de 25,7 a 26,6 mm/h: plou menys i cau
+més fort. Tot es calcula al navegador, així que moure el llindar no torna
 a demanar res. La pàgina carrega **uns 16 KB de dades comprimides**: un índex
 petit i la fitxa de l'estació que miris.
 

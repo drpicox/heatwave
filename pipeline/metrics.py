@@ -80,28 +80,41 @@ def histograms(daily: pd.DataFrame) -> dict[str, dict[str, dict[int, list[int]]]
 
 
 def monthly_detail(grp: pd.DataFrame) -> tuple[dict, dict]:
-    """Histogrames i mitjanes mes a mes d'una sola estacio.
+    """Histogrames i resum mes a mes d'una sola estacio.
 
     Es el que carrega la fitxa d'una estacio. Amb resolucio mensual, el web pot
     fer qualsevol finestra de mesos (any sencer, JJA, maig-octubre) i qualsevol
     llindar, sense haver de publicar la serie diaria.
 
-    La mitjana d'una finestra es reconstrueix exactament ponderant les mitjanes
-    mensuals pel nombre de dies, i el nombre de dies surt de sumar el propi
-    histograma. Per aixo no cal publicar-lo a part.
+    El resum de cada mes depen de la variable, i aixo es el que no es pot copiar
+    de la temperatura:
+
+    * `mean` -- la mitjana d'un mes de minimes te sentit, i la d'una finestra es
+      reconstrueix exactament ponderant les mensuals pel nombre de dies, que surt
+      de sumar el propi histograma.
+    * `sum` -- la mitjana de mil.limetres diaris no vol dir res: el que vols es
+      el total caigut, i els totals se sumen.
+    * `max` -- d'una intensitat, el resum es la punta; les puntes es combinen
+      agafant la mes gran.
     """
     hists: dict = {}
-    means: dict = {}
-    for short, (lo, hi) in config.HIST_RANGE.items():
+    resums: dict = {}
+    for short, info in config.VAR_INFO.items():
+        if short not in grp.columns:
+            continue
+        lo, hi = info["range"]
+        agg = info["agg"]
         for (year, month), sub in grp.groupby([grp["year"], grp["data"].dt.month]):
             h = histogram(sub[short], lo, hi)
             if h is None:
                 continue
+            serie = sub[short].dropna()
+            valor = {"mean": serie.mean, "sum": serie.sum, "max": serie.max}[agg]()
             hists.setdefault(short, {}).setdefault(str(int(year)), {})[str(int(month))] = h
-            means.setdefault(short, {}).setdefault(str(int(year)), {})[str(int(month))] = round(
-                float(sub[short].mean()), 2
+            resums.setdefault(short, {}).setdefault(str(int(year)), {})[str(int(month))] = round(
+                float(valor), 2
             )
-    return hists, means
+    return hists, resums
 
 
 def records(grp: pd.DataFrame) -> dict:

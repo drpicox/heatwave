@@ -344,7 +344,12 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
             "estacions": f"{config.DOMAIN}/d/{config.DS_STATIONS}",
             "variables": f"{config.DOMAIN}/d/{config.DS_VARIABLES}",
         },
-        "variables": {"tn": "Temperatura mínima diària", "tx": "Temperatura màxima diària"},
+        # El web llegeix d'aquí la unitat, com s'agrega cada variable i si la
+        # seva distribució està esbiaixada cap al zero: així afegir-ne una no
+        # obliga a tocar el codi del navegador.
+        "variables": {
+            k: {**v, "range": list(v["range"])} for k, v in config.VAR_INFO.items()
+        },
         "raw_data": {
             "policy": (
                 "Aquest lloc publica agregats derivats (histogrames i mitjanes), no una còpia "

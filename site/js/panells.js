@@ -5,7 +5,7 @@
  */
 
 import { linia } from "./grafics.js";
-import { state, META, ST, L, nf, signed, unitat, thrText, buida, majuscula,
+import { state, META, ST, L, nf, signed, unitat, thrText, buida, majuscula, varInfo, unitatVar,
          escapa, dataLlarga, DATASET, LEGAL, REPO } from "./nucli.js";
 
 export function dibuixaText(m) {
@@ -45,7 +45,7 @@ export function dibuixaText(m) {
       cond: thrText(), frase: t.seasonPhrase[state.season],
       a: nf(P[0].perAny, 1), b: nf(P[1].perAny, 1),
       verb: Math.abs(d) < 0.5 ? t.verbFlat : d > 0 ? t.verbUp : t.verbDown,
-      m0: nf(P[0].mitjana, 1), m1: nf(P[1].mitjana, 1), dm: signed(dm, 1),
+      m0: nf(P[0].mitjana, 1), m1: nf(P[1].mitjana, 1) + " " + unitatVar(), dm: signed(dm, 1),
     });
   } else sEl.textContent = t.heroShort;
 
@@ -89,8 +89,13 @@ export function dibuixaText(m) {
   tiles.append(tile(t.tPeak(unitat()), String(cim.any), "",
     `${nf(cim.hit)} ${unitat()}${cim.complet ? "" : " · " + t.tPartial}`));
   if (m.rec) {
-    tiles.append(tile(t.tHigh + sufix, `${nf(m.rec.alt, 1)} °C`, "", dataLlarga(m.rec.altData)));
-    tiles.append(tile(t.tLow + sufix, `${nf(m.rec.baix, 1)} °C`, "", dataLlarga(m.rec.baixData)));
+    tiles.append(tile(t.tHigh + sufix, `${nf(m.rec.alt, 1)} ${unitatVar()}`, "",
+      dataLlarga(m.rec.altData)));
+    // A la pluja el mínim és sempre zero i no diu res: la targeta no hi surt.
+    if (!varInfo().skewed) {
+      tiles.append(tile(t.tLow + sufix, `${nf(m.rec.baix, 1)} ${unitatVar()}`, "",
+        dataLlarga(m.rec.baixData)));
+    }
   }
 
   // capçaleres
@@ -99,7 +104,8 @@ export function dibuixaText(m) {
   document.getElementById("s-count").textContent =
     t.sCount + (m.apilat ? " " + t.sCountStack : "");
   document.getElementById("t-mean").textContent =
-    t.pMean(majuscula(t.vars[state.v].curt), t.seasonPhrase[state.season]);
+    t.pMean(majuscula(t.vars[state.v].curt) + " " + t.resum[varInfo().agg],
+            t.seasonPhrase[state.season]);
   document.getElementById("s-mean").textContent = t.sMean;
   document.getElementById("t-heat").textContent = t.pHeat(u, thrText());
   document.getElementById("s-heat").textContent = t.sHeat;

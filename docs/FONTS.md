@@ -25,11 +25,26 @@ mostra a totes les pàgines del web.
 
 Variables emprades del dataset diari:
 
-- `1002` — temperatura mínima diària
-- `1001` — temperatura màxima diària
+| codi | variable | unitat |
+|---|---|---|
+| `1002` | temperatura mínima diària | °C |
+| `1001` | temperatura màxima diària | °C |
+| `1300` | precipitació acumulada diària | mm |
+| `1303` | precipitació màxima en 1 h del dia | mm |
+
+Totes quatre arrenquen el **1988-09-01** i tenen la mateixa cobertura (uns 187
+punts de mesura el 2024).
 
 L'amplitud tèrmica (`1004`) no es descarrega perquè s'ha verificat que és
 exactament `1001 − 1002`.
+
+Hi ha una segona precipitació acumulada, `1301`, que va de les 8 h a les 8 h
+segons la convenció meteorològica. Aquí es fa servir `1300`, de dia natural, per
+coherència amb la temperatura, que també va per dia natural.
+
+El dataset publica moltes més variables diàries que aquí no es fan servir:
+humitat relativa, irradiació solar, vent, pressió i gruix de neu (aquesta última
+només a 20 estacions).
 
 Compte si en fas servir més: a `7bvh-jvq2` el camp `codi_variable` és **numèric**
 (`codi_variable=1002`), mentre que a `nzvn-apee` és **text**

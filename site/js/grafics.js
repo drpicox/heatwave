@@ -3,7 +3,8 @@
  * SVG a ma. Cada funcio rep el model ja calculat i nomes s'ocupa de pintar-lo.
  */
 
-import { state, ST, L, nf, signed, unitat, el, buida, ticks } from "./nucli.js";
+import { state, ST, L, nf, signed, unitat, el, buida, ticks,
+         varInfo, unitatVar } from "./nucli.js";
 
 export function mostraTip(host, x, y, nodes) {
   const t = host.querySelector(".tip");
@@ -53,6 +54,19 @@ export function dibuixaHist(m) {
   }
   if (!bins.size) return;
 
+  // A la pluja, quatre de cada cinc dies valen zero: si es dibuixa el bin del
+  // zero, la barra el tapa tot i no es veu res de la distribució que importa.
+  // S'amaga i es diu quin percentatge és, que és el que el lector ha de saber.
+  let secs = 0;
+  if (varInfo().skewed) {
+    for (const [b, n] of bins) if (b < 0.5 - 1e-9) { secs += n; bins.delete(b); }
+  }
+  const totalDies = secs + [...bins.values()].reduce((a, b) => a + b, 0);
+  const ajuda = document.getElementById("thr-help");
+  ajuda.textContent = secs && totalDies
+    ? L().secs(nf((secs / totalDies) * 100, 0))
+    : L().hThr;
+
   const claus = [...bins.keys()].sort((a, b) => a - b);
   const lo = +document.getElementById("f-thr").min;
   const hi = +document.getElementById("f-thr").max;
@@ -62,9 +76,14 @@ export function dibuixaHist(m) {
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.setAttribute("preserveAspectRatio", "none");
 
+  // Amb la pluja, un dia de 40 mm/h al costat de centenars de dies de 1 mm/h
+  // desapareix en escala lineal. La mateixa lliçó que al mapa mensual.
+  const escala = varInfo().skewed
+    ? (n) => Math.sqrt(n / max)
+    : (n) => n / max;
   for (const b of claus) {
     if (b < lo || b > hi) continue;
-    const alt = (bins.get(b) / max) * (H - 4);
+    const alt = escala(bins.get(b)) * (H - 4);
     const compleix = state.op === "ge" ? b >= state.thr - 1e-9 : b < state.thr - 1e-9;
     svg.append(el("rect", {
       x: X(b), y: H - alt, width: Math.max(1, X(lo + w) - X(lo) - 0.4), height: alt,
@@ -196,8 +215,13 @@ export function dibuixaMean(m) {
   const W = 900, H = 282, mg = { t: 18, r: 14, b: 56, l: 46 };
   const iw = W - mg.l - mg.r, ih = H - mg.t - mg.b;
   const vals = dades.map((f) => f.mitjana);
-  const lo = Math.min(...vals), hi = Math.max(...vals);
-  const marge = (hi - lo) * 0.18 || 0.5;
+  // Una mitjana de temperatures no comença a zero i va amb línia. Un total de
+  // mil.límetres i una punta d'intensitat sí que hi comencen, i van amb barres:
+  // dibuixar-los amb línia i eix retallat exageraria diferències petites.
+  const barres = varInfo().agg !== "mean";
+  const lo = barres ? 0 : Math.min(...vals);
+  const hi = Math.max(...vals);
+  const marge = barres ? 0 : ((hi - Math.min(...vals)) * 0.18 || 0.5);
   const Y = (v) => mg.t + ih - ((v - (lo - marge)) / ((hi + marge) - (lo - marge))) * ih;
   const banda = iw / m.files.length;
   const X = (any) => mg.l + m.files.findIndex((f) => f.any === any) * banda + banda / 2;
@@ -211,11 +235,26 @@ export function dibuixaMean(m) {
 
   // Una mitjana d'un tram a mitges no és un valor baix, és un altre estadístic:
   // els anys incomplets no hi surten, ni units per la línia ni com a punt.
-  svg.append(el("path", {
-    d: dades.map((f, k) => `${k ? "L" : "M"}${X(f.any)},${Y(f.mitjana)}`).join(" "),
-    fill: "none", stroke: "var(--accent)", "stroke-width": 2,
-    "stroke-linejoin": "round", "stroke-linecap": "round",
-  }));
+  if (barres) {
+    const ample = Math.min(24, banda - 3);
+    for (const f of dades) {
+      const x = X(f.any) - ample / 2, y = Y(f.mitjana);
+      const h = mg.t + ih - y;
+      const r = Math.min(4, ample / 2, h);
+      if (h > 0) svg.append(el("path", {
+        d: `M${x},${mg.t + ih} L${x},${y + r} Q${x},${y} ${x + r},${y} ` +
+           `L${x + ample - r},${y} Q${x + ample},${y} ${x + ample},${y + r} ` +
+           `L${x + ample},${mg.t + ih} Z`,
+        fill: "var(--accent)",
+      }));
+    }
+  } else {
+    svg.append(el("path", {
+      d: dades.map((f, k) => `${k ? "L" : "M"}${X(f.any)},${Y(f.mitjana)}`).join(" "),
+      fill: "none", stroke: "var(--accent)", "stroke-width": 2,
+      "stroke-linejoin": "round", "stroke-linecap": "round",
+    }));
+  }
 
   // Les línies de període porten sempre el seu valor escrit. Una línia sense
   // número obliga el lector a estimar-la contra l'eix, que és justament el que
@@ -233,17 +272,17 @@ export function dibuixaMean(m) {
       svg.append(el("text", {
         x: (X(p.y0) + X(p.y1)) / 2, y: mg.t + ih + 34, "text-anchor": "middle",
         fill: "var(--ink-2)", "font-size": 11, "font-family": "var(--mono)",
-      }, `${p.etiqueta} · ${nf(p.mitjana, 1)} °C`));
+      }, `${p.etiqueta} · ${nf(p.mitjana, 1)} ${unitatVar()}`));
     }
   }
 
   for (const f of dades) {
-    svg.append(el("circle", { cx: X(f.any), cy: Y(f.mitjana), r: 3.5, fill: "var(--accent)",
-      stroke: "var(--surface)", "stroke-width": 2 }));
+    if (!barres) svg.append(el("circle", { cx: X(f.any), cy: Y(f.mitjana), r: 3.5,
+      fill: "var(--accent)", stroke: "var(--surface)", "stroke-width": 2 }));
     const hit = el("circle", { cx: X(f.any), cy: Y(f.mitjana), r: 13, fill: "transparent" });
     hit.addEventListener("pointerenter", () =>
       mostraTip(host, X(f.any), Y(f.mitjana) - 10,
-        [titolTip(String(f.any)), linia(`${nf(f.mitjana, 1)} °C`, true)]));
+        [titolTip(String(f.any)), linia(`${nf(f.mitjana, 1)} ${unitatVar()}`, true)]));
     hit.addEventListener("pointerleave", () => amagaTip(host));
     svg.append(hit);
   }
@@ -253,7 +292,8 @@ export function dibuixaMean(m) {
   if (m.periodes && m.periodes[0].mitjana != null && m.periodes[1].mitjana != null) {
     const [a, b] = m.periodes;
     document.getElementById("s-mean").textContent +=
-      L().saltMean(nf(a.mitjana, 1), nf(b.mitjana, 1), signed(b.mitjana - a.mitjana, 1));
+      L().saltMean(nf(a.mitjana, 1), nf(b.mitjana, 1) + " " + unitatVar(),
+                   signed(b.mitjana - a.mitjana, 1));
   }
 }
 

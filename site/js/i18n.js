@@ -39,8 +39,13 @@ export const I18N = {
     vars: {
       tn: { nom: "Temperatura mínima", curt: "mínima", nit: true },
       tx: { nom: "Temperatura màxima", curt: "màxima", nit: false },
+      pp: { nom: "Precipitació diària", curt: "pluja", nit: false },
+      pi: { nom: "Intensitat de pluja (màx. en 1 h)", curt: "intensitat", nit: false },
     },
     nit: "nits", dia: "dies", any: "any",
+    // Titol del segon panell segons com s'agrega la variable.
+    resum: { mean: "mitjana", sum: "total", max: "màxima" },
+    secs: (pct) => `El ${pct} % dels dies no plou: l'histograma només mostra els dies amb pluja.`,
 
     seasons: {
       any: "Tot l'any",
@@ -69,7 +74,7 @@ export const I18N = {
     sentence: (d) =>
       `A <em>${d.estacio}</em>, ${d.unitat} amb ${d.varCurt} ${d.cond} ${d.frase} han passat ` +
       `de <em>${d.a}</em> a <em>${d.b}</em> de mitjana anual: ${d.verb}. ` +
-      `La ${d.varCurt} mitjana del període es mou de ${d.m0} a ${d.m1} °C (${d.dm}).`,
+      `La ${d.varCurt} del període es mou de ${d.m0} a ${d.m1} (${d.dm}).`,
     verbUp: "ha pujat", verbDown: "ha baixat", verbFlat: "s'ha mantingut",
 
     tTotal: "Total al tram", tTotalSub: (n) => `de ${n} dies amb dades`,
@@ -81,7 +86,7 @@ export const I18N = {
     sCountStack: "La part clara són els dies de la resta de l'any, fora de l'època seleccionada.",
     lPeriod: "mitjana del període", lRest: "resta de l'any", lPartial: "any incomplet",
 
-    pMean: (v, frase) => `${v} mitjana ${frase}, any per any`,
+    pMean: (v, frase) => `${v} ${frase}, any per any`,
     sMean: "Els anys sense prou dades s'ometen: una mitjana d'un tram a mitges no és comparable.",
 
     pHeat: (u, cond) => `Repartiment per mesos: ${u} amb ${cond}`,
@@ -89,7 +94,7 @@ export const I18N = {
     sHeatRar: (llista) =>
       ` Amb requadre, els mesos on això gairebé no passa mai: ${llista}.`,
     saltCount: (a, b, d, u) => ` El salt: de ${a} a ${b} ${u}/any (${d}).`,
-    saltMean: (a, b, d) => ` El salt: de ${a} a ${b} °C (${d}).`,
+    saltMean: (a, b, d) => ` El salt: de ${a} a ${b} (${d}).`,
 
     vistaEstacio: "Estació", vistaMapa: "Mapa",
     carregant: "Carregant el mapa…",
@@ -144,8 +149,12 @@ export const I18N = {
     vars: {
       tn: { nom: "Minimum temperature", curt: "minimum", nit: true },
       tx: { nom: "Maximum temperature", curt: "maximum", nit: false },
+      pp: { nom: "Daily rainfall", curt: "rainfall", nit: false },
+      pi: { nom: "Rain intensity (max in 1 h)", curt: "intensity", nit: false },
     },
     nit: "nights", dia: "days", any: "year",
+    resum: { mean: "mean", sum: "total", max: "peak" },
+    secs: (pct) => `${pct} % of days have no rain: the histogram only shows rainy days.`,
 
     seasons: {
       any: "Whole year",
@@ -174,7 +183,7 @@ export const I18N = {
     sentence: (d) =>
       `At <em>${d.estacio}</em>, ${d.unitat} with a ${d.varCurt} ${d.cond} ${d.frase} went ` +
       `from <em>${d.a}</em> to <em>${d.b}</em> per year on average: it ${d.verb}. ` +
-      `The mean ${d.varCurt} moves from ${d.m0} to ${d.m1} °C (${d.dm}).`,
+      `The ${d.varCurt} for the period moves from ${d.m0} to ${d.m1} (${d.dm}).`,
     verbUp: "rose", verbDown: "fell", verbFlat: "held steady",
 
     tTotal: "Total in range", tTotalSub: (n) => `out of ${n} days with data`,
@@ -186,14 +195,14 @@ export const I18N = {
     sCountStack: "The lighter part is days from the rest of the year, outside the selected season.",
     lPeriod: "period average", lRest: "rest of the year", lPartial: "incomplete year",
 
-    pMean: (v, frase) => `Mean ${v} ${frase}, year by year`,
+    pMean: (v, frase) => `${v} ${frase}, year by year`,
     sMean: "Years without enough data are omitted: a mean over half a season is not comparable.",
 
     pHeat: (u, cond) => `Spread by month: ${u} with ${cond}`,
     sHeat: "Each cell is one month. The darker it is, the more days meet the condition.",
     sHeatRar: (llista) => ` Boxed: the months where this almost never happens: ${llista}.`,
     saltCount: (a, b, d, u) => ` The change: from ${a} to ${b} ${u}/year (${d}).`,
-    saltMean: (a, b, d) => ` The change: from ${a} to ${b} °C (${d}).`,
+    saltMean: (a, b, d) => ` The change: from ${a} to ${b} (${d}).`,
 
     vistaEstacio: "Station", vistaMapa: "Map",
     carregant: "Loading the map…",
