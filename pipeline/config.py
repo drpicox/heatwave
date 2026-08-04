@@ -63,6 +63,19 @@ PRESETS = [
     {"id": "glacada", "var": "tn", "op": "<", "value": 0},
 ]
 
+# --- Quines estacions arriben al web -------------------------------------------
+#
+# Una estacio que va deixar d'emetre fa anys te valor d'arxiu, pero no serveix
+# per a la pregunta d'aquest projecte: no pot dir res del que passa ara. Al web
+# nomes hi arriben les que segueixen reportant i tenen prou historic recent.
+#
+# Les excloses NO es perden: segueixen a stations.json i als histogrames de totes
+# les estacions, que es on viu el registre complet.
+
+WEB_LAST_YEAR_MIN = 1     # anys enrere com a maxim que pot fer que no reporti
+WEB_RECENT_YEAR = 2018    # ha de tenir algun any complet a partir d'aqui
+
+
 # --- Estacions destacades ------------------------------------------------------
 #
 # El pipeline baixa les 241 estacions amb dades; aquesta llista nomes decideix

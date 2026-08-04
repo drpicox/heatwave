@@ -125,16 +125,31 @@ def build_stations(stations: pd.DataFrame, cov: pd.DataFrame, jja: pd.DataFrame)
     return out
 
 
-def build_index(stations: pd.DataFrame, cov: pd.DataFrame) -> list[dict]:
+def stations_for_web(cov: pd.DataFrame, today: dt.date | None = None) -> set[str]:
+    """Estacions que arriben al web: les que encara diuen alguna cosa d'ara.
+
+    Cal que segueixin reportant i que tinguin com a minim un any complet recent.
+    Una serie que es va acabar el 2009 es historia, i te el seu valor, pero no
+    respon la pregunta del projecte i embruta el selector.
+    """
+    today = today or dt.date.today()
+    limit = today.year - config.WEB_LAST_YEAR_MIN
+    viu = cov.groupby("codi_estacio")["year"].max()
+    recents = cov[(cov["complete"]) & (cov["year"] >= config.WEB_RECENT_YEAR)]
+    return set(viu[viu >= limit].index) & set(recents["codi_estacio"].unique())
+
+
+def build_index(stations: pd.DataFrame, cov: pd.DataFrame, keep: set[str]) -> list[dict]:
     """Index compacte: el minim per omplir el selector i situar l'estacio.
 
     Es l'unic fitxer que la pagina carrega sencer. Tot el detall viu a la fitxa
     de cada estacio i nomes es baixa quan se'n tria una.
     """
     meta = stations.set_index("codi_estacio").to_dict("index")
-    g = cov.groupby("codi_estacio")
     out = []
-    for code, grp in g:
+    for code, grp in cov.groupby("codi_estacio"):
+        if code not in keep:
+            continue
         m = meta.get(code, {})
         out.append({
             "codi": code,
@@ -142,6 +157,10 @@ def build_index(stations: pd.DataFrame, cov: pd.DataFrame) -> list[dict]:
             "municipi": m.get("nom_municipi"),
             "comarca": m.get("nom_comarca"),
             "altitud": m.get("altitud"),
+            # Les coordenades son al index perque la vista de mapa les necessita
+            # totes alhora, i no val la pena obrir 182 fitxes per tenir-les.
+            "lat": m.get("latitud"),
+            "lon": m.get("longitud"),
             "estat": m.get("nom_estat_ema"),
             "y0": int(grp["year"].min()),
             "y1": int(grp["year"].max()),
@@ -153,7 +172,7 @@ def build_index(stations: pd.DataFrame, cov: pd.DataFrame) -> list[dict]:
 
 
 def build_details(daily: pd.DataFrame, cov: pd.DataFrame, presets: pd.DataFrame,
-                  stations: pd.DataFrame) -> dict[str, dict]:
+                  stations: pd.DataFrame, keep: set[str] | None = None) -> dict[str, dict]:
     """Fitxa autocontinguda de cada estacio.
 
     Hi ha tot el que la pagina necessita per a una estacio: metadades, cobertura
@@ -188,6 +207,8 @@ def build_details(daily: pd.DataFrame, cov: pd.DataFrame, presets: pd.DataFrame,
 
     out = {}
     for code, grp in daily.groupby("codi_estacio", sort=True):
+        if keep is not None and code not in keep:
+            continue
         hists, means = metrics.monthly_detail(grp)
         m = meta.get(code, {})
         out[code] = {
@@ -269,8 +290,12 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
     presets = metrics.preset_counts(daily)
     hists = metrics.histograms(daily)
 
+    keep = stations_for_web(cov)
+    log(f"  {len(keep)} estacions al web, "
+        f"{cov['codi_estacio'].nunique() - len(keep)} excloses per no tenir dades recents")
+
     sizes = {}
-    sizes["index.json"] = _write(config.SITE_DATA / "index.json", build_index(stations, cov))
+    sizes["index.json"] = _write(config.SITE_DATA / "index.json", build_index(stations, cov, keep))
     sizes["stations.json"] = _write(
         config.SITE_DATA / "stations.json",
         build_stations(stations, cov, jja),
@@ -283,7 +308,7 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
             {"var": short, "bin": config.HIST_BIN, "range": [lo, hi], "stations": per_station},
         )
 
-    details = build_details(daily, cov, presets, stations)
+    details = build_details(daily, cov, presets, stations, keep)
     config.STATION_DATA.mkdir(parents=True, exist_ok=True)
     # Neteja les estacions que hagin desaparegut de la font, perque no quedin
     # fitxers orfes al repo dient coses que ja no diem.

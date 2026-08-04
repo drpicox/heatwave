@@ -84,7 +84,21 @@ en comptes de decidir sol.
 El filtre s'aplica **per variable**: si la màxima d'un dia no és representativa
 però la mínima sí, només es perd la màxima.
 
-### 2.4 Les estacions no s'encadenen mai
+### 2.4 Quines estacions arriben al web
+
+De les 241 estacions amb dades, al web n'hi arriben **182**. Perquè hi entri, una
+estació ha de seguir reportant (dada de l'any passat o d'aquest) i tenir com a
+mínim un any complet des del 2018.
+
+Les 59 excloses no es perden: segueixen a `data/stations.json` i als histogrames
+de totes les estacions, que és on viu el registre complet. El que passa és que
+41 d'elles van deixar d'emetre abans del 2018 i no poden dir res del que està
+passant ara, que és la pregunta d'aquest projecte.
+
+És una decisió editorial, no de qualitat: les seves dades són igual de bones,
+però responen una altra pregunta.
+
+### 2.5 Les estacions no s'encadenen mai
 
 Cada `codi_estacio` és una sèrie independent. No es concatena mai amb cap altra,
 encara que el nom s'assembli i el municipi sigui el mateix.

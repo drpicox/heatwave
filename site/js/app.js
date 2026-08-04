@@ -297,22 +297,41 @@ function dibuixaCount(m) {
     }
   }
 
-  etiquetesAny(svg, m.files, X, mg.t + ih + 16);
+  etiquetesAny(svg, m.files, X, mg.t + ih + 16, iw);
+
+  if (m.periodes) {
+    const [a, b] = m.periodes;
+    document.getElementById("s-count").textContent +=
+      L().saltCount(nf(a.perAny, 1), nf(b.perAny, 1),
+        signed(b.perAny - a.perAny, 1), unitat());
+  }
 }
 
-/** Etiquetes d'any sense encavalcar-se: val més una de menys que dues trepitjades. */
-function etiquetesAny(svg, files, X, y) {
-  const posades = [];
-  const cand = files.map((f, i) => ({ i, any: f.any }))
-    .filter((c, k) => k === 0 || k === files.length - 1 || c.any % 5 === 0);
-  const ordre = [cand[0], cand[cand.length - 1], ...cand.slice(1, -1)];
-  for (const c of ordre) {
-    if (!c) continue;
-    const x = X(c.i);
-    if (posades.some((p) => Math.abs(p - x) < 38)) continue;
-    posades.push(x);
-    svg.append(el("text", { x, y, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 },
-      String(c.any)));
+/** Etiquetes d'any: totes les que hi càpiguen, i abans d'ometre'n cap, escurçar-les.
+ *
+ *  Saltar-se anys deixa el lector comptant barres per saber on és. Abans que
+ *  això, es passa a dos dígits (05, 06, 07…), que ocupen la meitat. Només si
+ *  encara no hi caben es posa un pas de 2, 5 o 10 anys.
+ */
+function etiquetesAny(svg, files, X, y, amplada) {
+  const n = files.length;
+  if (!n) return;
+  const iw = amplada ?? (X(n - 1) - X(0));
+  const perEtiqueta = iw / Math.max(1, n - 1);
+
+  let curt = false, pas = 1;
+  if (perEtiqueta < 30) curt = true;              // no hi caben quatre xifres
+  const ample = curt ? 20 : 32;
+  while (iw / Math.ceil(n / pas) < ample && pas < 10) pas = pas === 1 ? 2 : pas === 2 ? 5 : 10;
+
+  const text = (a) => (curt ? String(a).slice(2) : String(a));
+  for (let i = 0; i < n; i++) {
+    const primer = i === 0, ultim = i === n - 1;
+    if (!primer && !ultim && (n - 1 - i) % pas !== 0) continue;
+    // El primer i l'últim manen; si un del pas hi cau a sobre, es descarta.
+    if (!primer && !ultim && (X(i) - X(0) < ample || X(n - 1) - X(i) < ample)) continue;
+    svg.append(el("text", { x: X(i), y, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 },
+      text(files[i].any)));
   }
 }
 
@@ -325,7 +344,7 @@ function dibuixaMean(m) {
   const dades = m.plens.filter((f) => f.mitjana != null);
   if (dades.length < 2) return;
 
-  const W = 900, H = 260, mg = { t: 18, r: 14, b: 34, l: 46 };
+  const W = 900, H = 282, mg = { t: 18, r: 14, b: 56, l: 46 };
   const iw = W - mg.l - mg.r, ih = H - mg.t - mg.b;
   const vals = dades.map((f) => f.mitjana);
   const lo = Math.min(...vals), hi = Math.max(...vals);
@@ -349,13 +368,23 @@ function dibuixaMean(m) {
     "stroke-linejoin": "round", "stroke-linecap": "round",
   }));
 
+  // Les línies de període porten sempre el seu valor escrit. Una línia sense
+  // número obliga el lector a estimar-la contra l'eix, que és justament el que
+  // el gràfic hauria d'estalviar-li.
   if (m.periodes) {
     for (const p of m.periodes) {
       if (p.mitjana == null) continue;
       svg.append(el("line", {
         x1: X(p.y0), x2: X(p.y1), y1: Y(p.mitjana), y2: Y(p.mitjana),
-        stroke: "var(--ink-2)", "stroke-width": 1.5, "stroke-dasharray": "none",
+        stroke: "var(--ink-2)", "stroke-width": 1.5,
       }));
+      // Sota l'eix, com al gràfic de barres. Posada al mig del període queia
+      // damunt de la mateixa sèrie, i cap halo no arregla una etiqueta que
+      // competeix amb les dades pel mateix espai.
+      svg.append(el("text", {
+        x: (X(p.y0) + X(p.y1)) / 2, y: mg.t + ih + 34, "text-anchor": "middle",
+        fill: "var(--ink-2)", "font-size": 11, "font-family": "var(--mono)",
+      }, `${p.etiqueta} · ${nf(p.mitjana, 1)} °C`));
     }
   }
 
@@ -370,7 +399,13 @@ function dibuixaMean(m) {
     svg.append(hit);
   }
 
-  etiquetesAny(svg, m.files, (i) => mg.l + i * banda + banda / 2, mg.t + ih + 16);
+  etiquetesAny(svg, m.files, (i) => mg.l + i * banda + banda / 2, mg.t + ih + 16, iw);
+
+  if (m.periodes && m.periodes[0].mitjana != null && m.periodes[1].mitjana != null) {
+    const [a, b] = m.periodes;
+    document.getElementById("s-mean").textContent +=
+      L().saltMean(nf(a.mitjana, 1), nf(b.mitjana, 1), signed(b.mitjana - a.mitjana, 1));
+  }
 }
 
 /* --- panell 3: repartiment per mesos ---------------------------------------- */
@@ -390,6 +425,15 @@ function dibuixaHeat(m) {
   let max = 0;
   for (const f of m.files) for (let mes = 1; mes <= 12; mes++) max = Math.max(max, f.cel[mes].c);
 
+  // Mesos excepcionals: aquells en què el fenomen gairebé no passa mai. Una
+  // mínima de 25 °C el març és la cel·la més noticiable de tot el gràfic, i amb
+  // una escala lineal era pràcticament invisible al costat d'un juliol ple.
+  const anysAmb = {};
+  for (let mes = 1; mes <= 12; mes++) {
+    anysAmb[mes] = m.files.filter((f) => f.cel[mes].c > 0).length;
+  }
+  const rar = (mes) => anysAmb[mes] > 0 && anysAmb[mes] <= Math.max(1, m.files.length * 0.25);
+
   for (let mes = 1; mes <= 12; mes++) {
     svg.append(el("text", {
       x: mg.l - 9, y: mg.t + (mes - 0.5) * ch + 4, "text-anchor": "end",
@@ -397,17 +441,31 @@ function dibuixaHeat(m) {
     }, L().mesos[mes - 1]));
   }
 
+  const excepcionals = [];
   m.files.forEach((f, i) => {
     for (let mes = 1; mes <= 12; mes++) {
       const c = f.cel[mes];
       const x = mg.l + i * cw, y = mg.t + (mes - 1) * ch;
+      const wd = Math.max(1, cw - 1);
+
       // Una sola tinta, més fosca com més dies: mai un arc de Sant Martí.
-      svg.append(el("rect", {
-        x, y, width: Math.max(1, cw - 1), height: ch - 1, rx: 1,
-        fill: c.n ? "var(--accent)" : "var(--neutral)",
-        "fill-opacity": c.n ? (max ? 0.08 + 0.92 * (c.c / max) : 0.08) : 0.14,
-      }));
-      const hit = el("rect", { x, y, width: Math.max(1, cw - 1), height: ch - 1, fill: "transparent" });
+      // L'escala és d'arrel i amb terra: qualsevol cel·la amb un sol dia ja es
+      // veu clarament diferent d'una de zero. Amb escala lineal, un dia sobre
+      // trenta es confonia amb el buit.
+      let fill = "var(--neutral)", opac = 0.1;
+      if (c.n && c.c > 0) { fill = "var(--accent)"; opac = 0.3 + 0.7 * Math.sqrt(c.c / max); }
+      else if (c.n) { fill = "var(--neutral)", opac = 0.16; }
+      svg.append(el("rect", { x, y, width: wd, height: ch - 1, rx: 1, fill, "fill-opacity": opac }));
+
+      if (c.c > 0 && rar(mes)) {
+        svg.append(el("rect", {
+          x: x + 0.5, y: y + 0.5, width: wd - 1, height: ch - 2, rx: 1,
+          fill: "none", stroke: "var(--ink)", "stroke-width": 1.5,
+        }));
+        excepcionals.push({ mes, any: f.any, c: c.c });
+      }
+
+      const hit = el("rect", { x, y, width: wd, height: ch - 1, fill: "transparent" });
       hit.addEventListener("pointerenter", () =>
         mostraTip(host, x + cw / 2, y - 2,
           [titolTip(`${L().mesos[mes - 1]} ${f.any}`),
@@ -417,8 +475,19 @@ function dibuixaHeat(m) {
       svg.append(hit);
     }
   });
+  // Es diuen pel seu nom, a més de marcar-les: ningú espera una mínima de 25 °C
+  // el març, i el gràfic ho ha de dir amb paraules i no només amb un requadre.
+  if (excepcionals.length) {
+    const noms = excepcionals
+      .slice(0, 6)
+      .map((e) => `${L().mesos[e.mes - 1]} ${e.any}`)
+      .join(", ");
+    const sobren = excepcionals.length - 6;
+    document.getElementById("s-heat").textContent +=
+      L().sHeatRar(noms + (sobren > 0 ? ` (i ${sobren} més)` : ""));
+  }
 
-  etiquetesAny(svg, m.files, (i) => mg.l + i * cw + cw / 2, H - 8);
+  etiquetesAny(svg, m.files, (i) => mg.l + i * cw + cw / 2, H - 8, cw * m.files.length);
 }
 
 /* --- text ------------------------------------------------------------------ */

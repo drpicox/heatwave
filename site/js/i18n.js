@@ -86,6 +86,10 @@ export const I18N = {
 
     pHeat: (u, cond) => `Repartiment per mesos: ${u} amb ${cond}`,
     sHeat: "Cada cel·la és un mes. Com més fosca, més dies compleixen la condició.",
+    sHeatRar: (llista) =>
+      ` Amb requadre, els mesos on això gairebé no passa mai: ${llista}.`,
+    saltCount: (a, b, d, u) => ` El salt: de ${a} a ${b} ${u}/any (${d}).`,
+    saltMean: (a, b, d) => ` El salt: de ${a} a ${b} °C (${d}).`,
 
     tableSummary: "Veure les dades en una taula",
     thYear: "Any", thDays: "Dies", thRest: "Resta", thMean: "Mitjana", thObs: "Obs.", thCov: "Cobertura",
@@ -179,6 +183,9 @@ export const I18N = {
 
     pHeat: (u, cond) => `Spread by month: ${u} with ${cond}`,
     sHeat: "Each cell is one month. The darker it is, the more days meet the condition.",
+    sHeatRar: (llista) => ` Boxed: the months where this almost never happens: ${llista}.`,
+    saltCount: (a, b, d, u) => ` The change: from ${a} to ${b} ${u}/year (${d}).`,
+    saltMean: (a, b, d) => ` The change: from ${a} to ${b} °C (${d}).`,
 
     tableSummary: "See the data as a table",
     thYear: "Year", thDays: "Days", thRest: "Rest", thMean: "Mean", thObs: "Obs.", thCov: "Coverage",
