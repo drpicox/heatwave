@@ -106,15 +106,25 @@ El que sí que es publica:
 
 | fitxer | què és |
 |---|---|
-| `data/stations.json` | metadades, cobertura any a any i mitjanes estivals de totes les estacions |
-| `data/hist-tn.json`, `data/hist-tx.json` | histogrames **anuals** de totes les estacions |
-| `data/st/<CODI>.json` | histogrames i mitjanes **mensuals** d'una estació (~23 KB) |
+| `data/index.json` | l'imprescindible de cada estació per al selector (~40 KB) |
+| `data/st/<CODI>.json` | la fitxa sencera d'una estació (~36 KB) |
 | `data/meta.json` | dates, atribució i comptadors del control de qualitat |
+| `data/stations.json`, `data/hist-*.json` | agregats de totes les estacions alhora, per a comparacions futures |
+
+La pàgina només carrega l'índex i **una** fitxa: uns 16 KB comprimits. La fitxa
+porta, per a cada any, els histogrames i les mitjanes **mes a mes**, la cobertura
+i els quatre rècords amb la seva data.
 
 La resolució mensual permet triar qualsevol finestra de mesos i qualsevol
 llindar. El que **no** permet, i s'assumeix conscientment, són les ratxes de nits
 consecutives i les dates exactes de llindars que no siguin els de drecera. Qui
 necessiti això té l'enllaç a la font.
+
+Els rècords s'inclouen precisament perquè són l'única cosa que un histograma no
+pot reconstruir: no guarda dates. Són quatre números per any i variable, molt
+més barat que publicar la sèrie diària per poder-los trobar. Van sempre referits
+a **l'any sencer**, també quan tens una època de l'any seleccionada, i la fitxa
+ho diu.
 
 Les mitjanes d'una finestra es reconstrueixen exactament ponderant les mitjanes
 mensuals pel nombre de dies de cada mes, i el nombre de dies surt de sumar el
@@ -123,26 +133,32 @@ dècada des dels fitxers publicats, no des de les dades internes.
 
 ## 4. Com es calculen els recomptes al navegador
 
-El pipeline publica, per a cada estació i any, un **histograma** dels valors
-diaris en intervals d'1 °C. El navegador en deriva el recompte de qualsevol
-llindar sense tornar a demanar res.
+El pipeline publica, per a cada estació, any i mes, un **histograma** dels valors
+diaris en intervals de **0,5 °C**. El navegador en deriva el recompte de
+qualsevol llindar sense tornar a demanar res, i per això el llindar pot ser un
+control que llisca en comptes d'una llista tancada.
 
-Els intervals són semioberts per l'esquerra: l'interval *k* conté els valors de
-[*k*, *k*+1). D'això en surten dues operacions **exactes**, i només dues:
+Mig grau i no un grau sencer per dos motius: és la resolució a la qual la font
+publica els valors, i l'histograma es dibuixa darrere del control de llindar —
+a un grau, el perfil de la distribució surt massa dentat per llegir-hi la forma.
+
+Els intervals són semioberts per l'esquerra: l'interval que comença a *k* conté
+els valors de [*k*, *k*+0,5). D'això en surten dues operacions **exactes**, i
+només dues:
 
 ```
-dies amb valor ≥ T  =  suma dels intervals k ≥ T
-dies amb valor < T  =  suma dels intervals k < T
+dies amb valor ≥ T  =  suma dels intervals que comencen a ≥ T
+dies amb valor < T  =  suma dels intervals que comencen a  < T
 ```
 
-Totes les mètriques del web s'expressen amb una d'aquestes dues formes. Per això
-el dia de glaçada es defineix aquí com `mínima < 0` i no com `mínima ≤ 0`: la
-segona no es pot respondre exactament amb aquesta graella, i preferim una
-definició explícita a un número aproximat que sembli exacte.
+Per això el control de condició ofereix **«≥ o més»** i **«menys de»**, i no
+«≤ o menys»: aquesta última no es pot respondre exactament amb aquesta graella, i
+preferim una definició explícita a un número aproximat que sembli exacte. El
+mateix motiu fa que el dia de glaçada es defineixi com `mínima < 0`.
 
-A la fitxa d'una estació els mateixos comptes es fan sobre els histogrames
-mensuals, de manera que pots restringir-los a qualsevol conjunt de mesos. Les
-**mitjanes** no passen per la graella: es publiquen exactes, mes a mes.
+Les **mitjanes** no passen per la graella: es publiquen exactes, mes a mes. La
+mitjana d'una finestra qualsevol es reconstrueix ponderant les mitjanes mensuals
+pel nombre de dies, i el nombre de dies surt de sumar el mateix histograma.
 
 ## 5. Tendències
 

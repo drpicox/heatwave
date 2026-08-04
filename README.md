@@ -28,9 +28,15 @@ en les ~190 estacions operatives, la història no és la que tothom espera.
 Sense servidor i sense cap crida a l'API des del navegador. Un script baixa les
 dades, les filtra, calcula i escriu JSON estàtics que es versionen al repositori.
 
-El que es versiona són **agregats** (histogrames i mitjanes), no una còpia de les
-dades del Meteocat: cada fitxa d'estació enllaça les dades brutes directament a
-la font. La portada carrega 172 KB comprimits i la fitxa d'una estació 7 KB més.
+El que es versiona són **agregats** (histogrames i mitjanes mensuals), no una
+còpia de les dades del Meteocat: cada fitxa d'estació enllaça les dades brutes
+directament a la font.
+
+El web és un explorador: tries una estació, una variable i un llindar, i compta
+els dies que el superen any per any, partint la sèrie en dues meitats per veure
+com ha canviat. Tot es calcula al navegador, així que moure el llindar no torna
+a demanar res. La pàgina carrega **uns 16 KB de dades comprimides**: un índex
+petit i la fitxa de l'estació que miris.
 
 ```
 ./dothething.sh            baixa el que falti, calcula i escriu site/data/

@@ -4,122 +4,133 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nits de calor a Catalunya</title>
-<meta name="description" content="Com evolucionen les nits de calor a les estacions de la XEMA, i si l'escalfament nocturn depèn de l'altitud.">
+<meta name="description" content="Quants dies l'any superen un llindar de temperatura a cada estació de la XEMA, i com ha canviat.">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<main>
+<div class="wrap">
 
-  <h1>L'escalfament nocturn no va igual a tot arreu</h1>
-  <p class="lead">
-    A <span id="stations-count">—</span> estacions de la XEMA, des del 1988. Tria què vols
-    mesurar —el ritme d'escalfament de les nits d'estiu, o quantes nits superen un
-    llindar— i mira si el canvi té res a veure amb l'altitud de l'estació.
-  </p>
-
-  <!-- Una sola fila de controls, i afecta tot el que hi ha per sota. -->
-  <div class="controls" role="group" aria-label="Filtres">
-    <div class="control">
-      <span class="label" id="lbl-met">Què es mesura</span>
-      <div class="segmented" id="met-seg" role="group" aria-labelledby="lbl-met"></div>
+  <header class="masthead">
+    <div class="lede">
+      <p class="eyebrow" id="x-eyebrow"></p>
+      <h1 id="x-h1"></h1>
+      <p id="x-lede"></p>
     </div>
-
-    <div class="control">
-      <span class="label" id="lbl-var">Variable</span>
-      <div class="segmented" id="var-seg" role="group" aria-labelledby="lbl-var"></div>
+    <div class="masthead-side">
+      <div class="seg langs" role="group" id="lang-group" aria-label="Idioma"></div>
+      <div class="plate" id="plate"></div>
     </div>
+  </header>
 
-    <div class="control" id="llindar-control">
-      <label class="label" for="llindar">Llindar</label>
-      <div class="threshold">
-        <input type="range" id="llindar" min="-10" max="42" step="1" value="20">
-        <output id="llindar-out" for="llindar">≥ 20 °C</output>
+  <section class="controls">
+    <div class="control-row">
+      <div class="field">
+        <label for="f-station" id="x-l-station"></label>
+        <select id="f-station"></select>
+      </div>
+      <div class="field">
+        <label for="f-var" id="x-l-var"></label>
+        <select id="f-var"></select>
+      </div>
+      <div class="field">
+        <span class="lbl" id="x-l-op"></span>
+        <div class="seg" role="group" aria-labelledby="x-l-op">
+          <button type="button" id="op-ge" aria-pressed="true"></button>
+          <button type="button" id="op-le" aria-pressed="false"></button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="thr-head">
+          <label for="f-thr" id="x-l-thr"></label>
+          <span class="thr-val" id="thr-val"></span>
+        </div>
+        <div class="hist-box">
+          <svg id="hist" aria-hidden="true"></svg>
+          <input type="range" id="f-thr" min="-10" max="45" step="0.5" value="20"
+                 aria-describedby="thr-help">
+        </div>
+        <span id="thr-help" class="hint"></span>
+      </div>
+      <div class="field">
+        <label for="f-season" id="x-l-season"></label>
+        <select id="f-season"></select>
       </div>
     </div>
 
-    <div class="control">
-      <span class="label" id="lbl-win">Període</span>
-      <div class="segmented" id="win-seg" role="group" aria-labelledby="lbl-win"></div>
-    </div>
-
-    <div class="control control-wide">
-      <span class="label" id="lbl-pre">Dreceres</span>
-      <div class="presets" id="presets" role="group" aria-labelledby="lbl-pre"></div>
-    </div>
-  </div>
-
-  <section class="hero">
-    <p class="figure" id="hero-figure">—</p>
-    <p class="caption" id="hero-caption"></p>
-    <div class="windows" id="windows"></div>
-  </section>
-
-  <p class="note">
-    Una tendència no vol dir res sense el seu període. Una sèrie que comença el 2006 no
-    inclou els anys plans dels noranta, i per això surt més inclinada <em>pel simple fet
-    de començar més tard</em>. Per això els dos períodes es calculen sempre tots dos, i
-    cada estació ha de tenir complets almenys el 90 % dels anys del període per entrar-hi.
-  </p>
-
-  <section class="card">
-    <h2 id="scatter-title">Tendència contra altitud</h2>
-    <p class="sub">Cada punt és una estació. <span id="hint">Clica un punt per veure la sèrie completa d'aquella estació.</span></p>
-    <div class="legend">
-      <span><i class="key" style="background:var(--accent)"></i> Estacions destacades</span>
-      <span><i class="key" style="background:var(--muted);opacity:.55"></i> Resta d'estacions</span>
-    </div>
-    <div class="chart" id="scatter"></div>
-    <div class="tip" id="tip" role="status" aria-live="polite"></div>
-    <p class="note" id="avis-zero" hidden>
-      Compte amb la fila d'estacions clavades al zero: no és que no s'escalfin, és que
-      <strong>mai no arriben al llindar</strong> i el comptador no es pot moure. Un recompte
-      mesura impacte; per comparar altituds, la mitjana d'estiu és la mètrica honesta.
-    </p>
-    <details>
-      <summary>Veure les dades en una taula</summary>
-      <div class="tablewrap">
-        <table id="tabla">
-          <thead>
-            <tr>
-              <th scope="col">Estació</th>
-              <th scope="col">Altitud (m)</th>
-              <th scope="col" id="th-tend">Tendència</th>
-              <th scope="col" id="th-mitj">Mitjana</th>
-              <th scope="col">Anys</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+    <div class="control-row two">
+      <div class="field">
+        <div class="thr-head">
+          <span class="lbl" id="x-l-years"></span>
+          <span class="thr-val" id="yr-val"></span>
+        </div>
+        <div class="dual" id="yr-dual">
+          <div class="dual-track"></div>
+          <div class="dual-fill" id="yr-fill"></div>
+          <input type="range" id="yr-a" step="1" aria-label="Any inicial">
+          <input type="range" id="yr-b" step="1" aria-label="Any final">
+        </div>
+        <span class="hint" id="x-h-years"></span>
       </div>
-    </details>
+      <div class="field">
+        <div class="thr-head">
+          <span class="lbl" id="x-l-split"></span>
+          <span class="thr-val" id="split-val"></span>
+        </div>
+        <input type="range" id="f-split" step="1" aria-label="Punt de tall">
+        <span class="hint" id="x-h-split"></span>
+      </div>
+    </div>
+
+    <div class="presets">
+      <span class="lbl" id="x-l-presets"></span>
+      <div id="preset-list" style="display:contents"></div>
+    </div>
   </section>
 
-  <section class="card" id="station-card" hidden>
-    <h2 id="station-name"></h2>
-    <p class="sub" id="station-meta"></p>
-    <div class="chart" id="station-chart"></div>
-    <p class="sub" id="station-caption"></p>
-    <button type="button" id="tancar" class="seg-like">Tornar a totes les estacions</button>
+  <section class="readout" aria-live="polite">
+    <div>
+      <div class="hero-fig" id="hero-fig"></div>
+      <div class="hero-cap" id="hero-cap"></div>
+      <div class="hero-delta" id="hero-delta"></div>
+    </div>
+    <p class="sentence" id="sentence"></p>
   </section>
 
-</main>
+  <section class="tiles" id="tiles"></section>
 
-<footer>
-  <p>
-    Font: Servei Meteorològic de Catalunya (XEMA). Dades obertes de la Generalitat de
-    Catalunya. Consulteu l'<a href="https://www.meteo.cat/wpweb/avis-legal/">avís legal</a>
-    i el <a href="https://analisi.transparenciacatalunya.cat/d/7bvh-jvq2">conjunt de dades original</a>.
-  </p>
-  <p id="updated"></p>
-  <p>
-    Les sèries <strong>no estan homogeneïtzades</strong> i no són dades científiques
-    validades: els canvis d'instrument o d'entorn de l'estació poden produir salts que no
-    tenen res a veure amb el clima.
-    Vegeu la <a href="https://github.com/drpicox/heatwave/blob/main/docs/METODOLOGIA.md">metodologia</a>,
-    les <a href="https://github.com/drpicox/heatwave/blob/main/docs/FONTS.md">fonts</a>
-    i el <a href="https://github.com/drpicox/heatwave">codi</a>.
-  </p>
-</footer>
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2 id="t-count"></h2><p class="sub" id="s-count"></p></div>
+      <div class="legend" id="l-count"></div>
+    </div>
+    <div class="chart" id="c-count"><svg></svg><div class="tip"></div></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2 id="t-mean"></h2><p class="sub" id="s-mean"></p></div>
+      <div class="legend" id="l-mean"></div>
+    </div>
+    <div class="chart" id="c-mean"><svg></svg><div class="tip"></div></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2 id="t-heat"></h2><p class="sub" id="s-heat"></p></div>
+      <div class="scale-legend" id="l-heat"></div>
+    </div>
+    <div class="chart" id="c-heat"><svg></svg><div class="tip"></div></div>
+  </section>
+
+  <details class="tableview">
+    <summary id="x-table-summary"></summary>
+    <div class="table-body"><div class="tscroll"><table id="tabla">
+      <thead><tr id="t-head"></tr></thead><tbody></tbody>
+    </table></div></div>
+  </details>
+
+  <footer id="x-footer"></footer>
+</div>
 
 <script type="module" src="js/app.js"></script>
 </body>

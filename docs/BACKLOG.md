@@ -105,6 +105,29 @@ pendents de si s'accepta canviar el municipi demanat per un altre:
 Per Montcada i Reixac, Sant Adrià de Besòs i Santa Coloma de Gramenet no hi ha
 res al Barcelonès més enllà de les estacions de Barcelona i Badalona.
 
+## Comparar dues estacions
+
+El web és, ara mateix, un explorador **d'una estació**. La comparació entre
+estacions —marcar-ne dues i veure-les de costat— es va decidir deixar per més
+endavant.
+
+Quan es faci, el pipeline ja hi juga a favor: `data/stations.json` i
+`data/hist-tn.json` / `data/hist-tx.json` ja es generen i porten totes les
+estacions alhora, així que és feina de navegador i no de dades.
+
+**Amb una condició que no es pot saltar:** una comparació honesta ha de retallar
+totes les sèries a la finestra d'anys que tenen en comú, i dir-ho. Una sèrie que
+comença el 2006 no inclou els anys plans dels noranta i surt més inclinada pel
+sol fet de començar més tard. Vegeu la secció de tendències de
+[METODOLOGIA.md](METODOLOGIA.md), que ho documenta amb els números.
+
+I un segon parany, mesurat: si es compara amb un **recompte per damunt d'un
+llindar**, les estacions que no arriben mai al llindar donen zero per
+construcció. Amb les nits tropicals això fabrica una correlació amb l'altitud de
+−0,53 que no vol dir el que sembla, mentre que la mitjana estival, que val a
+totes les altituds, en dona +0,33. Per comparar altituds, la mètrica honesta és
+la mitjana.
+
 ## Altres
 
 - **Amplitud tèrmica** (`màxima − mínima`). Es pot calcular ja des dels agregats

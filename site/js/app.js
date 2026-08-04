@@ -1,658 +1,861 @@
-/* Nits de calor a Catalunya — portada.
+/* Nits de calor a Catalunya — explorador d'estació.
  *
- * Tot el que es dibuixa aqui es calcula al navegador a partir dels histogrames
- * anuals que publica el pipeline. Per aixo el llindar pot ser un slider: moure'l
- * es tornar a sumar uns quants centenars d'enters, no tornar a demanar res.
+ * Tot es calcula al navegador des dels histogrames mensuals que publica el
+ * pipeline. Moure el llindar, canviar d'època de l'any o retallar el rang no
+ * torna a demanar res: es tornen a sumar uns quants milers d'enters.
  *
- * SVG a ma i cap dependencia externa. La pagina ha de seguir funcionant d'aqui
- * a deu anys i des d'una copia local.
+ * SVG a mà i cap dependència externa. La pàgina ha de seguir funcionant d'aquí
+ * a deu anys i des d'una còpia local.
  */
 
-import { T, nomMetrica, nomDrecera } from "./strings.ca.js";
-
-/* --- estat --------------------------------------------------------------- */
-
-const FINESTRES = [
-  { id: "2006-2025", de: 2006, a: 2025 },
-  { id: "1996-2025", de: 1996, a: 2025 },
-];
-
-/* Fraccio d'anys de la finestra que una estacio ha de tenir complets per entrar
- * a la comparacio. Sense aquest filtre es barrejarien estacions amb historics de
- * longitud diferent, que es la manera mes facil d'inventar-se una tendencia. */
-const COBERTURA = 0.9;
-
-const state = {
-  // Per defecte la mitjana d'estiu, i no el recompte de nits tropicals, perque
-  // es l'unica de les dues que val a totes les altituds: una estacio de muntanya
-  // que no arriba mai als 20 graus te tendencia zero per construccio, i aixo no
-  // vol dir que no s'escalfi.
-  metrica: "jja",
-  variable: "tn",
-  op: ">=",
-  llindar: 20,
-  finestra: "2006-2025",
-  estacio: null,
-};
-
-let META = null;
-let ESTACIONS = [];
-const HIST = {};
-
-const nf = (d = 0) =>
-  new Intl.NumberFormat("ca-ES", { minimumFractionDigits: d, maximumFractionDigits: d });
-
-const unitat = () => T.metriques[state.metrica].unitat;
-const dec = () => T.metriques[state.metrica].decimals;
-const signe = (v, d = dec()) => (v > 0 ? "+" : v < 0 ? "−" : "") + nf(d).format(Math.abs(v));
-
-/* --- estadistica --------------------------------------------------------- */
-
-/** Mediana de tots els pendents entre parelles de punts (Theil-Sen).
- *  No parametrica i robusta a valors extrems, que es el que toca amb series
- *  curtes i sorolloses. */
-function theilSen(xs, ys) {
-  if (xs.length < 5) return null;
-  const s = [];
-  for (let i = 0; i < xs.length; i++)
-    for (let j = i + 1; j < xs.length; j++) {
-      const dx = xs[j] - xs[i];
-      if (dx) s.push((ys[j] - ys[i]) / dx);
-    }
-  return s.length ? mediana(s) : null;
-}
-
-function mediana(a) {
-  const v = [...a].sort((x, y) => x - y);
-  const m = v.length >> 1;
-  return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
-}
-
-function pearson(xs, ys) {
-  const n = xs.length;
-  if (n < 3) return null;
-  const mx = xs.reduce((a, b) => a + b, 0) / n;
-  const my = ys.reduce((a, b) => a + b, 0) / n;
-  let sxy = 0, sxx = 0, syy = 0;
-  for (let i = 0; i < n; i++) {
-    const dx = xs[i] - mx, dy = ys[i] - my;
-    sxy += dx * dy; sxx += dx * dx; syy += dy * dy;
-  }
-  return sxx && syy ? sxy / Math.sqrt(sxx * syy) : null;
-}
-
-/* --- histogrames --------------------------------------------------------- */
-
-/** Dies per damunt (o per sota) del llindar, a partir d'un histograma dispers.
- *
- *  L'histograma es `[offset, c0, c1, ...]` amb bins d'1 grau semioberts: el bin
- *  k conte els valors de [k, k+1). Nomes dues operacions son exactes amb aquesta
- *  graella, i son justament aquestes dues. */
-function compta(h, llindar, op) {
-  if (!h) return 0;
-  const off = h[0];
-  let n = 0;
-  for (let i = 1; i < h.length; i++) {
-    const bin = off + i - 1;
-    if (op === ">=" ? bin >= llindar : bin < llindar) n += h[i];
-  }
-  return n;
-}
-
-async function histograma(variable) {
-  if (!HIST[variable]) {
-    const r = await fetch(`data/hist-${variable}.json`);
-    HIST[variable] = (await r.json()).stations;
-  }
-  return HIST[variable];
-}
-
-/* --- calcul per estacio -------------------------------------------------- */
-
-function finestraActual() {
-  return FINESTRES.find((f) => f.id === state.finestra);
-}
-
-/** Serie anual d'una estacio dins la finestra.
- *
- *  Els anys que no passen el control de completesa no entren mai a `vals`, que
- *  es el que alimenta la tendencia. Quan es demana, tornen a part com a
- *  `parcials`, per poder-los dibuixar marcats en comptes d'amagar-los. */
-function serie(est, hist, fin, { nomesComplets = true } = {}) {
-  const anys = [], vals = [], parcials = [];
-
-  if (state.metrica === "jja") {
-    const camp = state.variable === "tn" ? "jja_tn" : "jja_tx";
-    for (const y of est.years) {
-      if (y.y < fin.de || y.y > fin.a) continue;
-      const v = y[camp];
-      if (v == null) continue;
-      // Aqui mana la completesa de juny-agost, no la de l'any sencer.
-      if (y.jc) { anys.push(y.y); vals.push(v); }
-      else if (!nomesComplets) parcials.push({ any: y.y, valor: v, ongoing: y.og });
-    }
-    return { anys, vals, parcials };
-  }
-
-  const h = hist[est.codi];
-  if (!h) return null;
-  for (const y of est.years) {
-    if (y.y < fin.de || y.y > fin.a) continue;
-    const hh = h[String(y.y)];
-    if (!hh) continue;
-    const v = compta(hh, state.llindar, state.op);
-    if (y.c) { anys.push(y.y); vals.push(v); }
-    else if (!nomesComplets) parcials.push({ any: y.y, valor: v, ongoing: y.og });
-  }
-  return { anys, vals, parcials };
-}
-
-function calcula(hist) {
-  const fin = finestraActual();
-  const calen = Math.ceil((fin.a - fin.de + 1) * COBERTURA);
-  const punts = [];
-  for (const est of ESTACIONS) {
-    if (est.altitud == null) continue;
-    const s = serie(est, hist, fin);
-    if (!s || s.anys.length < calen) continue;
-    const pendent = theilSen(s.anys, s.vals);
-    if (pendent == null) continue;
-    punts.push({
-      est,
-      decada: pendent * 10,
-      mitjana: s.vals.reduce((a, b) => a + b, 0) / s.vals.length,
-      nAnys: s.anys.length,
-      destacada: DESTACADES.has(est.codi),
-    });
-  }
-  return punts;
-}
-
-let DESTACADES = new Set();
-
-/* --- SVG ----------------------------------------------------------------- */
+import { I18N, SEASONS } from "./i18n.js";
 
 const NS = "http://www.w3.org/2000/svg";
+const DATASET = "https://analisi.transparenciacatalunya.cat/d/7bvh-jvq2";
+const LEGAL = "https://www.meteo.cat/wpweb/avis-legal/";
+const REPO = "https://github.com/drpicox/heatwave";
 
-function sv(tag, attrs = {}, text) {
+const state = {
+  lang: "ca",
+  st: null,      // codi d'estació
+  v: "tn",
+  op: "ge",      // "ge" = >= llindar, "lt" = < llindar
+  thr: 20,
+  season: "any",
+  y0: null, y1: null,
+  split: null,   // null = automàtic (la meitat de la sèrie)
+};
+
+let META = null, INDEX = null, ST = null, COMPLETESA = 0.95;
+
+/* --- utilitats ------------------------------------------------------------ */
+
+const L = () => I18N[state.lang];
+const nf = (x, d = 0) =>
+  new Intl.NumberFormat(state.lang === "ca" ? "ca-ES" : "en-GB",
+    { minimumFractionDigits: d, maximumFractionDigits: d }).format(x);
+const signed = (x, d = 1) => (x > 0 ? "+" : x < 0 ? "−" : "±") + nf(Math.abs(x), d);
+const opSym = () => (state.op === "ge" ? "≥" : "<");
+const thrText = () => `${opSym()} ${nf(state.thr, 1)} °C`;
+const diesMes = (y, m) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+const unitat = () => (L().vars[state.v].nit ? L().nit : L().dia);
+
+function el(tag, attrs = {}, text) {
   const e = document.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
   if (text != null) e.textContent = text;
   return e;
 }
+const buida = (n) => { while (n.firstChild) n.removeChild(n.firstChild); };
 
-/** Ticks rodons dins d'un rang. */
-function ticks(min, max, n = 5) {
-  const cru = (max - min) / n || 1;
+function ticks(lo, hi, n = 4) {
+  const cru = (hi - lo) / n || 1;
   const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(cru))));
   const pas = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((p) => p >= cru) || mag * 10;
   const out = [];
-  for (let v = Math.ceil(min / pas) * pas; v <= max + 1e-9; v += pas) out.push(+v.toFixed(6));
+  for (let v = Math.ceil(lo / pas) * pas; v <= hi + 1e-9; v += pas) out.push(+v.toFixed(6));
   return out;
 }
 
-/* --- dispersio: tendencia contra altitud --------------------------------- */
+/* --- histogrames ---------------------------------------------------------- */
 
-function dibuixaDispersio(punts) {
-  const cont = document.getElementById("scatter");
-  cont.textContent = "";
-  const tip = document.getElementById("tip");
+/** Dies que compleixen la condició, a partir d'un histograma dispers.
+ *
+ *  L'histograma és `[inici, c0, c1, ...]` i el bin i cobreix
+ *  [inici + i·w, inici + (i+1)·w). Amb aquesta graella només dues preguntes
+ *  tenen resposta exacta, i són justament les dues que ofereix el control:
+ *  "≥ T" i "< T". Per això no hi ha "≤".
+ */
+function compta(h, thr, op, w) {
+  if (!h) return 0;
+  let n = 0;
+  for (let i = 1; i < h.length; i++) {
+    const b = h[0] + (i - 1) * w;
+    if (op === "ge" ? b >= thr - 1e-9 : b < thr - 1e-9) n += h[i];
+  }
+  return n;
+}
+const totalHist = (h) => (h ? h.slice(1).reduce((a, b) => a + b, 0) : 0);
 
-  if (!punts.length) {
-    cont.append(Object.assign(document.createElement("p"), {
-      className: "sub", textContent: T.ui.cap,
-    }));
-    return;
+/* --- model ---------------------------------------------------------------- */
+
+function model() {
+  const w = ST.bin;
+  const mesos = SEASONS[state.season];
+  const dins = new Set(mesos);
+  const hVar = ST.h[state.v] || {};
+  const mVar = ST.m[state.v] || {};
+
+  const files = [];
+  for (const any of Object.keys(hVar).map(Number).sort((a, b) => a - b)) {
+    if (any < state.y0 || any > state.y1) continue;
+    const perMes = hVar[String(any)] || {};
+    const mitjanes = mVar[String(any)] || {};
+
+    let hit = 0, hitTot = 0, obs = 0, obsTot = 0, suma = 0, esperats = 0;
+    const cel = {};
+    for (let m = 1; m <= 12; m++) {
+      const h = perMes[String(m)];
+      const n = totalHist(h);
+      const c = compta(h, state.thr, state.op, w);
+      obsTot += n; hitTot += c;
+      if (dins.has(m)) {
+        obs += n; hit += c;
+        esperats += diesMes(any, m);
+        const mm = mitjanes[String(m)];
+        if (mm != null) suma += mm * n;
+      }
+      cel[m] = { n, c };
+    }
+
+    const cobertura = esperats ? obs / esperats : 0;
+    files.push({
+      any, hit, obs, cobertura, cel,
+      resta: Math.max(0, hitTot - hit),
+      mitjana: obs ? suma / obs : null,
+      // Un any en curs no és incomplet per manca de dades: és que no s'ha acabat.
+      encurs: !!(ST.anys[String(any)] || {}).og,
+      complet: cobertura >= COMPLETESA && !(ST.anys[String(any)] || {}).og,
+    });
   }
 
-  const W = 900, H = 460;
-  const m = { t: 16, r: 24, b: 46, l: 62 };
-  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const plens = files.filter((f) => f.complet);
+  let periodes = null, tall = null;
+  if (plens.length >= 4) {
+    tall = plens[Math.round(plens.length / 2)].any;
+    if (state.split != null) {
+      tall = Math.max(plens[0].any + 1, Math.min(plens[plens.length - 1].any, state.split));
+    }
+    const A = plens.filter((f) => f.any < tall);
+    const B = plens.filter((f) => f.any >= tall);
+    if (A.length && B.length) periodes = [periode(A), periode(B)];
+  }
 
-  const altMax = Math.max(...punts.map((p) => p.est.altitud));
-  const ys = punts.map((p) => p.decada);
-  let yMin = Math.min(0, ...ys), yMax = Math.max(0, ...ys);
-  const pad = (yMax - yMin) * 0.08 || 1;
-  yMin -= pad; yMax += pad;
+  // Rècords de l'any sencer dins el rang triat. L'histograma no guarda dates,
+  // així que aquests quatre números venen precalculats del pipeline.
+  let rec = null;
+  const perAny = (ST.rec || {})[state.v] || {};
+  for (const [any, r] of Object.entries(perAny)) {
+    const y = +any;
+    if (y < state.y0 || y > state.y1) continue;
+    if (!rec || r[0] > rec.alt) rec = { ...(rec || {}), alt: r[0], altData: r[1] };
+    if (!rec || r[2] < rec.baix || rec.baix == null) rec = { ...rec, baix: r[2], baixData: r[3] };
+  }
 
-  const X = (v) => m.l + (v / (altMax * 1.04)) * iw;
-  const Y = (v) => m.t + ih - ((v - yMin) / (yMax - yMin)) * ih;
+  return { files, plens, periodes, tall, rec, mesos, apilat: state.season !== "any", w };
+}
 
-  const svg = sv("svg", {
-    viewBox: `0 0 ${W} ${H}`, width: W, height: H,
-    role: "img", "aria-label": document.getElementById("scatter-title").textContent,
+function periode(llista) {
+  const n = llista.length;
+  const hits = llista.reduce((a, f) => a + f.hit, 0);
+  const mitjanes = llista.filter((f) => f.mitjana != null);
+  return {
+    y0: llista[0].any, y1: llista[n - 1].any, n, anys: llista,
+    total: hits, perAny: hits / n,
+    mitjana: mitjanes.length ? mitjanes.reduce((a, f) => a + f.mitjana, 0) / mitjanes.length : null,
+    etiqueta: `${llista[0].any}–${llista[n - 1].any}`,
+  };
+}
+
+/* --- indicador ------------------------------------------------------------- */
+
+function mostraTip(host, x, y, nodes) {
+  const t = host.querySelector(".tip");
+  buida(t);
+  nodes.forEach((n) => t.append(n));
+  t.style.left = x + "px";
+  t.style.top = y + "px";
+  t.style.opacity = "1";
+}
+const amagaTip = (host) => { host.querySelector(".tip").style.opacity = "0"; };
+function linia(text, forta) {
+  const s = document.createElement(forta ? "b" : "span");
+  s.textContent = text;
+  return s;
+}
+function titolTip(text) {
+  const s = document.createElement("span");
+  s.className = "ty";
+  s.textContent = text;
+  return s;
+}
+
+/* --- histograma del llindar ------------------------------------------------ */
+
+function dibuixaHist(m) {
+  const svg = document.getElementById("hist");
+  buida(svg);
+  const W = 300, H = 46, w = m.w;
+
+  // Un sol histograma amb tots els dies del rang i de l'època seleccionada:
+  // és la distribució que el llindar està tallant.
+  const bins = new Map();
+  const hVar = ST.h[state.v] || {};
+  for (const any of Object.keys(hVar)) {
+    if (+any < state.y0 || +any > state.y1) continue;
+    for (const mes of m.mesos) {
+      const h = hVar[any][String(mes)];
+      if (!h) continue;
+      for (let i = 1; i < h.length; i++) {
+        const b = +(h[0] + (i - 1) * w).toFixed(2);
+        bins.set(b, (bins.get(b) || 0) + h[i]);
+      }
+    }
+  }
+  if (!bins.size) return;
+
+  const claus = [...bins.keys()].sort((a, b) => a - b);
+  const lo = +document.getElementById("f-thr").min;
+  const hi = +document.getElementById("f-thr").max;
+  const max = Math.max(...bins.values());
+  const X = (v) => ((v - lo) / (hi - lo)) * W;
+
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("preserveAspectRatio", "none");
+
+  for (const b of claus) {
+    if (b < lo || b > hi) continue;
+    const alt = (bins.get(b) / max) * (H - 4);
+    const compleix = state.op === "ge" ? b >= state.thr - 1e-9 : b < state.thr - 1e-9;
+    svg.append(el("rect", {
+      x: X(b), y: H - alt, width: Math.max(1, X(lo + w) - X(lo) - 0.4), height: alt,
+      fill: compleix ? "var(--accent)" : "var(--neutral)",
+      "fill-opacity": compleix ? 0.85 : 0.32,
+    }));
+  }
+  svg.append(el("line", {
+    x1: X(state.thr), x2: X(state.thr), y1: 0, y2: H,
+    stroke: "var(--ink)", "stroke-width": 1,
+  }));
+}
+
+/* --- panell 1: dies per any ------------------------------------------------ */
+
+function dibuixaCount(m) {
+  const host = document.getElementById("c-count");
+  const svg = host.querySelector("svg");
+  buida(svg);
+  if (!m.files.length) return;
+
+  const W = 900, H = 340, mg = { t: 14, r: 14, b: 42, l: 46 };
+  const iw = W - mg.l - mg.r, ih = H - mg.t - mg.b;
+  const banda = iw / m.files.length;
+  const ample = Math.min(26, banda - 3);
+  const max = Math.max(1, ...m.files.map((f) => f.hit + (m.apilat ? f.resta : 0)));
+  const Y = (v) => mg.t + ih - (v / max) * ih;
+  const X = (i) => mg.l + i * banda + banda / 2;
+
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  for (const t of ticks(0, max, 4)) {
+    svg.append(el("line", { x1: mg.l, x2: mg.l + iw, y1: Y(t), y2: Y(t), stroke: "var(--grid)", "stroke-width": 1 }));
+    svg.append(el("text", { x: mg.l - 9, y: Y(t) + 4, "text-anchor": "end",
+      fill: "var(--muted)", "font-size": 11 }, nf(t)));
+  }
+
+  m.files.forEach((f, i) => {
+    const x = mg.l + i * banda + (banda - ample) / 2;
+    const dibuixa = (base, valor, fill, opac) => {
+      const h = (valor / max) * ih;
+      if (h <= 0) return;
+      const y = Y(base + valor);
+      const r = Math.min(4, ample / 2, h);
+      svg.append(el("path", {
+        d: `M${x},${Y(base)} L${x},${y + r} Q${x},${y} ${x + r},${y} ` +
+           `L${x + ample - r},${y} Q${x + ample},${y} ${x + ample},${y + r} L${x + ample},${Y(base)} Z`,
+        fill, "fill-opacity": opac,
+      }));
+    };
+    // La part de sota és l'època seleccionada; la de sobre, la resta de l'any.
+    dibuixa(0, f.hit, f.complet ? "var(--accent)" : "var(--neutral)", 1);
+    if (m.apilat && f.resta) dibuixa(f.hit, f.resta, "var(--neutral)", 0.45);
+
+    const hit = el("rect", { x: mg.l + i * banda, y: mg.t, width: banda, height: ih, fill: "transparent" });
+    hit.addEventListener("pointerenter", () => {
+      const nodes = [titolTip(String(f.any) + (f.complet ? "" : ` · ${L().lPartial}`)),
+                     linia(`${nf(f.hit)} ${unitat()}`, true)];
+      if (m.apilat && f.resta) nodes.push(document.createElement("br"), linia(`+${nf(f.resta)} ${L().lRest}`));
+      mostraTip(host, X(i), Y(f.hit + (m.apilat ? f.resta : 0)) - 8, nodes);
+    });
+    hit.addEventListener("pointerleave", () => amagaTip(host));
+    svg.append(hit);
   });
 
-  // Graella horitzontal: hairline solida, mai discontinua.
-  for (const t of ticks(yMin, yMax, 5)) {
-    svg.append(sv("line", { x1: m.l, x2: m.l + iw, y1: Y(t), y2: Y(t), class: "gridline" }));
-    svg.append(sv("text", { x: m.l - 10, y: Y(t) + 4, "text-anchor": "end", class: "tick" },
-      nf(dec()).format(t)));
-  }
-  // El zero es la referencia que importa: cap tendencia o tendencia a la baixa.
-  svg.append(sv("line", { x1: m.l, x2: m.l + iw, y1: Y(0), y2: Y(0), class: "axisline" }));
-
-  for (const t of ticks(0, altMax * 1.04, 5)) {
-    svg.append(sv("text", { x: X(t), y: m.t + ih + 20, "text-anchor": "middle", class: "tick" },
-      nf(0).format(t)));
-  }
-  svg.append(sv("text", { x: m.l + iw, y: H - 6, "text-anchor": "end", class: "axis-label" },
-    `altitud de l'estació (${T.unitats.metres})`));
-  svg.append(sv("text", {
-    x: 14, y: m.t + ih / 2, class: "axis-label", "text-anchor": "middle",
-    transform: `rotate(-90 14 ${m.t + ih / 2})`,
-  }, `tendència (${unitat()})`));
-
-  // Context primer, emfasi a sobre: el gris no ha de tapar mai el blau.
-  const ordenats = [...punts].sort((a, b) => a.destacada - b.destacada);
-  for (const p of ordenats) {
-    const x = X(p.est.altitud), y = Y(p.decada);
-    const g = sv("g");
-    g.append(sv("circle", {
-      cx: x, cy: y, r: p.destacada ? 6 : 4.5,
-      fill: p.destacada ? "var(--accent)" : "var(--muted)",
-      "fill-opacity": p.destacada ? 1 : 0.55,
-      class: "dot-ring",
-    }));
-    // L'area sensible es molt mes gran que el punt: ningu encerta un cercle de 9 px.
-    const hit = sv("circle", { cx: x, cy: y, r: 13, class: "hit" });
-    if (p.destacada) { hit.setAttribute("tabindex", "0"); hit.setAttribute("role", "button"); }
-    hit.setAttribute("aria-label", `${p.est.nom}, ${p.est.altitud} m, ${signe(p.decada)} ${unitat()}`);
-
-    const mostra = (ev) => {
-      const r = cont.getBoundingClientRect();
-      const px = (ev.clientX ?? r.left + x * (r.width / W)) - r.left;
-      const py = (ev.clientY ?? r.top + y * (r.width / W)) - r.top;
-      tip.textContent = "";
-      const v = document.createElement("span");
-      v.className = "v";
-      v.textContent = `${signe(p.decada)} ${unitat()}`;
-      const n = document.createElement("span");
-      n.className = "n";
-      // Els noms venen de l'API: textContent i mai innerHTML.
-      n.textContent = p.est.nom || p.est.codi;
-      const d = document.createElement("span");
-      d.className = "m";
-      const mitjana = state.metrica === "jja"
-        ? `${nf(1).format(p.mitjana)} °C de mitjana`
-        : `${nf(0).format(p.mitjana)} ${T.unitats.dies}/any de mitjana`;
-      d.textContent = `${nf(0).format(p.est.altitud)} m · ${p.nAnys} anys · ${mitjana}`;
-      tip.append(v, n, document.createElement("br"), d);
-      tip.dataset.show = "1";
-      tip.style.left = Math.min(px + 14, cont.clientWidth - 200) + "px";
-      tip.style.top = Math.max(py - 10, 0) + "px";
-    };
-    const amaga = () => { tip.dataset.show = "0"; };
-
-    hit.addEventListener("pointermove", mostra);
-    hit.addEventListener("pointerleave", amaga);
-    hit.addEventListener("focus", mostra);
-    hit.addEventListener("blur", amaga);
-    hit.addEventListener("click", () => selecciona(p.est.codi));
-    hit.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selecciona(p.est.codi); }
-    });
-
-    g.append(hit);
-    svg.append(g);
+  // Les dues línies de període: és el que explica el canvi sense parlar de pendents.
+  if (m.periodes) {
+    for (const p of m.periodes) {
+      const i0 = m.files.findIndex((f) => f.any === p.y0);
+      const i1 = m.files.findIndex((f) => f.any === p.y1);
+      if (i0 < 0 || i1 < 0) continue;
+      const x0 = mg.l + i0 * banda + 1, x1 = mg.l + (i1 + 1) * banda - 1;
+      svg.append(el("line", { x1: x0, x2: x1, y1: Y(p.perAny), y2: Y(p.perAny),
+        stroke: "var(--ink-2)", "stroke-width": 1.5 }));
+      svg.append(el("text", {
+        x: (x0 + x1) / 2, y: mg.t + ih + 34, "text-anchor": "middle",
+        fill: "var(--ink-2)", "font-size": 11, "font-family": "var(--mono)",
+      }, `${p.etiqueta} · ${nf(p.perAny, 1)} ${unitat()}/${L().any}`));
+    }
   }
 
-  cont.append(svg);
+  etiquetesAny(svg, m.files, X, mg.t + ih + 16);
 }
 
-/* --- serie d'una estacio -------------------------------------------------- */
-
-function dibuixaEstacio(est, hist) {
-  const cont = document.getElementById("station-chart");
-  cont.textContent = "";
-
-  // Aqui es mostra tot l'historic, no nomes la finestra: la fitxa d'una estacio
-  // ha d'ensenyar el que te.
-  const tot = { de: -Infinity, a: Infinity };
-  const s = serie(est, hist, tot, { nomesComplets: false });
-
-  // En un recompte, un any incomplet es un subrecompte: te sentit ensenyar-lo
-  // marcat, perque el lector veu que la barra es curta perque falten dies. En una
-  // MITJANA no: un estiu a mitges no dona un valor baix, dona un altre estadistic,
-  // i pintar-lo convida a llegir-lo com si fos comparable. Per aixo s'omet.
-  const mostraParcials = state.metrica !== "jja";
-  const files = [
-    ...s.anys.map((a, i) => ({ any: a, valor: s.vals[i], complet: true })),
-    ...(mostraParcials
-      ? s.parcials.map((p) => ({ any: p.any, valor: p.valor, complet: false, ongoing: p.ongoing }))
-      : []),
-  ].sort((a, b) => a.any - b.any);
-
-  if (!files.length) return;
-
-  const W = 900, H = 300;
-  const m = { t: 22, r: 16, b: 42, l: 52 };
-  const iw = W - m.l - m.r, ih = H - m.t - m.b;
-  const banda = iw / files.length;
-
-  // Un recompte comenca a zero i es dibuixa amb barres. Una temperatura mitjana
-  // no comenca a zero: amb barres caldria truncar l'eix, que es exactament la
-  // manera d'exagerar una diferencia petita. Per aixo va amb linia.
-  const barres = state.metrica !== "jja";
-  const vals = files.map((f) => f.valor);
-  const vMax = barres ? Math.max(1, ...vals) : Math.max(...vals);
-  const vMin = barres ? 0 : Math.min(...vals);
-  const marge = barres ? 0 : (vMax - vMin) * 0.15 || 0.5;
-  const lo = vMin - marge, hi = vMax + marge;
-  const Y = (v) => m.t + ih - ((v - lo) / (hi - lo)) * ih;
-  const X = (i) => m.l + i * banda + banda / 2;
-
-  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img",
-    "aria-label": `Sèrie anual de ${est.nom}` });
-
-  for (const t of ticks(lo, hi, 4)) {
-    svg.append(sv("line", { x1: m.l, x2: m.l + iw, y1: Y(t), y2: Y(t), class: "gridline" }));
-    svg.append(sv("text", { x: m.l - 10, y: Y(t) + 4, "text-anchor": "end", class: "tick" },
-      nf(barres ? 0 : 1).format(t)));
-  }
-
-  if (barres) {
-    const ample = Math.min(24, banda - 2);  // mai omplir la banda: l'aire hi compta
-    files.forEach((f, i) => {
-      const x = m.l + i * banda + (banda - ample) / 2;
-      const h = m.t + ih - Y(f.valor);
-      const y = Y(f.valor);
-      const r = Math.min(4, ample / 2, h);  // extrem arrodonit, base quadrada
-      if (h > 0) {
-        svg.append(sv("path", {
-          d: `M${x},${m.t + ih} L${x},${y + r} Q${x},${y} ${x + r},${y} ` +
-             `L${x + ample - r},${y} Q${x + ample},${y} ${x + ample},${y + r} ` +
-             `L${x + ample},${m.t + ih} Z`,
-          fill: f.complet ? "var(--accent)" : "var(--muted)",
-          "fill-opacity": f.complet ? 1 : 0.45,
-        }));
-      }
-    });
-  } else {
-    // Els anys incomplets no s'uneixen amb la linia: es dibuixen com a punts
-    // solts, perque una linia continua faria creure que la serie no te forats.
-    const complets = files.filter((f) => f.complet);
-    const d = complets
-      .map((f, k) => `${k ? "L" : "M"}${X(files.indexOf(f))},${Y(f.valor)}`)
-      .join(" ");
-    if (d) {
-      svg.append(sv("path", {
-        d, fill: "none", stroke: "var(--accent)", "stroke-width": 2,
-        "stroke-linejoin": "round", "stroke-linecap": "round",
-      }));
-    }
-    for (const f of files) {
-      svg.append(sv("circle", {
-        cx: X(files.indexOf(f)), cy: Y(f.valor), r: 4,
-        fill: f.complet ? "var(--accent)" : "var(--muted)",
-        "fill-opacity": f.complet ? 1 : 0.5,
-        class: "dot-ring",
-      }));
-    }
-  }
-
-  // Etiquetes de l'eix sense trepitjar-se: es proposen el primer, l'ultim i els
-  // multiples de cinc, i despres es descarta qualsevol que caigui massa a prop
-  // d'una altra. Val mes una etiqueta de menys que dos numeros encavalcats.
-  const SEPARACIO = 42;
+/** Etiquetes d'any sense encavalcar-se: val més una de menys que dues trepitjades. */
+function etiquetesAny(svg, files, X, y) {
   const posades = [];
-  const candidats = files
-    .map((f, i) => ({ i, any: f.any }))
-    .filter((c) => c.i === 0 || c.i === files.length - 1 || c.any % 5 === 0)
-    .sort((a, b) => (a.i === 0 || a.i === files.length - 1 ? -1 : 0) -
-                    (b.i === 0 || b.i === files.length - 1 ? -1 : 0));
-  for (const c of candidats) {
+  const cand = files.map((f, i) => ({ i, any: f.any }))
+    .filter((c, k) => k === 0 || k === files.length - 1 || c.any % 5 === 0);
+  const ordre = [cand[0], cand[cand.length - 1], ...cand.slice(1, -1)];
+  for (const c of ordre) {
+    if (!c) continue;
     const x = X(c.i);
-    if (posades.some((p) => Math.abs(p - x) < SEPARACIO)) continue;
+    if (posades.some((p) => Math.abs(p - x) < 38)) continue;
     posades.push(x);
-    svg.append(sv("text", { x, y: m.t + ih + 18, "text-anchor": "middle", class: "tick" },
+    svg.append(el("text", { x, y, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 },
       String(c.any)));
   }
-
-  // Etiqueta selectiva: nomes l'extrem, mai un numero a cada punt.
-  const complets = files.filter((f) => f.complet);
-  if (complets.length) {
-    const cim = complets.reduce((a, b) => (b.valor > a.valor ? b : a));
-    svg.append(sv("text", {
-      x: X(files.indexOf(cim)), y: Y(cim.valor) - 10, "text-anchor": "middle", class: "tick",
-    }, `${nf(barres ? 0 : 1).format(cim.valor)}${barres ? "" : " °C"} el ${cim.any}`));
-  }
-
-  document.getElementById("station-chart").append(svg);
-
-  const cap = document.getElementById("station-caption");
-  cap.textContent = "";
-  const txt = document.createElement("span");
-  if (mostraParcials) {
-    const parcials = files.filter((f) => !f.complet).map((f) => f.any);
-    txt.textContent = parcials.length
-      ? `En gris, els anys sense prou dades (${parcials.join(", ")}): ${T.ui.anyParcial}.`
-      : "Tots els anys de la sèrie passen el filtre de completesa.";
-  } else {
-    const omesos = s.parcials.map((p) => p.any);
-    txt.textContent = omesos.length
-      ? `S'han omès ${omesos.length} anys sense prou dades de juny a agost ` +
-        `(${omesos.join(", ")}): una mitjana d'un estiu a mitges no és comparable amb les altres.`
-      : "Tots els estius de la sèrie tenen prou dades.";
-  }
-  cap.append(txt);
-  const a = document.createElement("a");
-  a.href = `https://analisi.transparenciacatalunya.cat/resource/7bvh-jvq2.csv?$where=codi_estacio='${encodeURIComponent(est.codi)}'&$order=data_lectura`;
-  a.textContent = T.ui.dadesCrues;
-  a.rel = "noopener";
-  cap.append(" ", a, ".");
 }
 
-/* --- taula equivalent ----------------------------------------------------- */
+/* --- panell 2: mitjana anual ----------------------------------------------- */
 
-function dibuixaTaula(punts) {
-  document.getElementById("th-tend").textContent = `Tendència (${unitat()})`;
-  document.getElementById("th-mitj").textContent =
-    state.metrica === "jja" ? "Mitjana (°C)" : "Mitjana (dies/any)";
+function dibuixaMean(m) {
+  const host = document.getElementById("c-mean");
+  const svg = host.querySelector("svg");
+  buida(svg);
+  const dades = m.plens.filter((f) => f.mitjana != null);
+  if (dades.length < 2) return;
 
+  const W = 900, H = 260, mg = { t: 18, r: 14, b: 34, l: 46 };
+  const iw = W - mg.l - mg.r, ih = H - mg.t - mg.b;
+  const vals = dades.map((f) => f.mitjana);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const marge = (hi - lo) * 0.18 || 0.5;
+  const Y = (v) => mg.t + ih - ((v - (lo - marge)) / ((hi + marge) - (lo - marge))) * ih;
+  const banda = iw / m.files.length;
+  const X = (any) => mg.l + m.files.findIndex((f) => f.any === any) * banda + banda / 2;
+
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  for (const t of ticks(lo - marge, hi + marge, 4)) {
+    svg.append(el("line", { x1: mg.l, x2: mg.l + iw, y1: Y(t), y2: Y(t), stroke: "var(--grid)", "stroke-width": 1 }));
+    svg.append(el("text", { x: mg.l - 9, y: Y(t) + 4, "text-anchor": "end",
+      fill: "var(--muted)", "font-size": 11 }, nf(t, 1)));
+  }
+
+  // Una mitjana d'un tram a mitges no és un valor baix, és un altre estadístic:
+  // els anys incomplets no hi surten, ni units per la línia ni com a punt.
+  svg.append(el("path", {
+    d: dades.map((f, k) => `${k ? "L" : "M"}${X(f.any)},${Y(f.mitjana)}`).join(" "),
+    fill: "none", stroke: "var(--accent)", "stroke-width": 2,
+    "stroke-linejoin": "round", "stroke-linecap": "round",
+  }));
+
+  if (m.periodes) {
+    for (const p of m.periodes) {
+      if (p.mitjana == null) continue;
+      svg.append(el("line", {
+        x1: X(p.y0), x2: X(p.y1), y1: Y(p.mitjana), y2: Y(p.mitjana),
+        stroke: "var(--ink-2)", "stroke-width": 1.5, "stroke-dasharray": "none",
+      }));
+    }
+  }
+
+  for (const f of dades) {
+    svg.append(el("circle", { cx: X(f.any), cy: Y(f.mitjana), r: 3.5, fill: "var(--accent)",
+      stroke: "var(--surface)", "stroke-width": 2 }));
+    const hit = el("circle", { cx: X(f.any), cy: Y(f.mitjana), r: 13, fill: "transparent" });
+    hit.addEventListener("pointerenter", () =>
+      mostraTip(host, X(f.any), Y(f.mitjana) - 10,
+        [titolTip(String(f.any)), linia(`${nf(f.mitjana, 1)} °C`, true)]));
+    hit.addEventListener("pointerleave", () => amagaTip(host));
+    svg.append(hit);
+  }
+
+  etiquetesAny(svg, m.files, (i) => mg.l + i * banda + banda / 2, mg.t + ih + 16);
+}
+
+/* --- panell 3: repartiment per mesos ---------------------------------------- */
+
+function dibuixaHeat(m) {
+  const host = document.getElementById("c-heat");
+  const svg = host.querySelector("svg");
+  buida(svg);
+  if (!m.files.length) return;
+
+  const W = 900, mg = { t: 14, r: 14, b: 26, l: 46 };
+  const cw = (W - mg.l - mg.r) / m.files.length;
+  const ch = 15;
+  const H = mg.t + ch * 12 + mg.b;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  let max = 0;
+  for (const f of m.files) for (let mes = 1; mes <= 12; mes++) max = Math.max(max, f.cel[mes].c);
+
+  for (let mes = 1; mes <= 12; mes++) {
+    svg.append(el("text", {
+      x: mg.l - 9, y: mg.t + (mes - 0.5) * ch + 4, "text-anchor": "end",
+      fill: "var(--muted)", "font-size": 10.5,
+    }, L().mesos[mes - 1]));
+  }
+
+  m.files.forEach((f, i) => {
+    for (let mes = 1; mes <= 12; mes++) {
+      const c = f.cel[mes];
+      const x = mg.l + i * cw, y = mg.t + (mes - 1) * ch;
+      // Una sola tinta, més fosca com més dies: mai un arc de Sant Martí.
+      svg.append(el("rect", {
+        x, y, width: Math.max(1, cw - 1), height: ch - 1, rx: 1,
+        fill: c.n ? "var(--accent)" : "var(--neutral)",
+        "fill-opacity": c.n ? (max ? 0.08 + 0.92 * (c.c / max) : 0.08) : 0.14,
+      }));
+      const hit = el("rect", { x, y, width: Math.max(1, cw - 1), height: ch - 1, fill: "transparent" });
+      hit.addEventListener("pointerenter", () =>
+        mostraTip(host, x + cw / 2, y - 2,
+          [titolTip(`${L().mesos[mes - 1]} ${f.any}`),
+           linia(`${nf(c.c)} ${unitat()}`, true),
+           linia(` / ${nf(c.n)}`)]));
+      hit.addEventListener("pointerleave", () => amagaTip(host));
+      svg.append(hit);
+    }
+  });
+
+  etiquetesAny(svg, m.files, (i) => mg.l + i * cw + cw / 2, H - 8);
+}
+
+/* --- text ------------------------------------------------------------------ */
+
+function dibuixaText(m) {
+  const t = L(), P = m.periodes, recent = P ? P[1] : null;
+
+  const fig = document.getElementById("hero-fig");
+  buida(fig);
+  if (recent) {
+    fig.append(document.createTextNode(nf(recent.perAny, 1)));
+    const u = document.createElement("span");
+    u.className = "unit";
+    u.textContent = `${unitat()}/${t.any}`;
+    fig.append(u);
+  } else fig.textContent = "—";
+
+  document.getElementById("hero-cap").textContent =
+    recent ? t.heroCap(recent.etiqueta, ST.nom) : t.heroShort;
+
+  const dEl = document.getElementById("hero-delta");
+  buida(dEl);
+  if (P) {
+    const d = P[1].perAny - P[0].perAny;
+    dEl.append(document.createTextNode((d > 0 ? "▲" : d < 0 ? "▼" : "▬") + " "));
+    dEl.append(linia(`${signed(d, 1)} ${unitat()}/${t.any}`, true));
+    dEl.append(document.createTextNode(` ${t.deltaVs} ${P[0].etiqueta} (`));
+    dEl.append(linia(nf(P[0].perAny, 1), true));
+    dEl.append(document.createTextNode(")"));
+  }
+
+  const sEl = document.getElementById("sentence");
+  if (P && P[0].mitjana != null && P[1].mitjana != null) {
+    const d = P[1].perAny - P[0].perAny;
+    const dm = P[1].mitjana - P[0].mitjana;
+    // El nom de l'estació ve de l'API: es neteja abans d'entrar a l'HTML.
+    sEl.innerHTML = t.sentence({
+      estacio: escapa(ST.nom), unitat: unitat(), varCurt: t.vars[state.v].curt,
+      cond: thrText(), frase: t.seasonPhrase[state.season],
+      a: nf(P[0].perAny, 1), b: nf(P[1].perAny, 1),
+      verb: Math.abs(d) < 0.5 ? t.verbFlat : d > 0 ? t.verbUp : t.verbDown,
+      m0: nf(P[0].mitjana, 1), m1: nf(P[1].mitjana, 1), dm: signed(dm, 1),
+    });
+  } else sEl.textContent = t.heroShort;
+
+  // placa
+  const pl = document.getElementById("plate");
+  buida(pl);
+  const fila = (k, v) => {
+    const d = document.createElement("div");
+    const a = document.createElement("span"); a.className = "k"; a.textContent = k;
+    const b = document.createElement("span"); b.className = "v"; b.textContent = v;
+    d.append(a, b);
+    return d;
+  };
+  const anys = Object.keys(ST.anys).map(Number);
+  pl.append(fila(t.plate.station, ST.nom));
+  if (ST.municipi) pl.append(fila(t.plate.muni, ST.municipi));
+  if (ST.altitud != null) pl.append(fila(t.plate.alt, `${nf(ST.altitud)} m`));
+  pl.append(fila(t.plate.serie, `${Math.min(...anys)}–${Math.max(...anys)}`));
+  pl.append(fila(t.plate.dies, nf(Object.values(ST.anys).reduce((a, y) => a + y.n, 0))));
+  if (ST.estat && ST.estat !== "Operativa") pl.append(fila(t.plate.estat, t.desmantellada));
+
+  // targetes
+  const tiles = document.getElementById("tiles");
+  buida(tiles);
+  if (!m.files.length) return;
+  const total = m.files.reduce((a, f) => a + f.hit, 0);
+  const obs = m.files.reduce((a, f) => a + f.obs, 0);
+  const cim = m.files.reduce((a, b) => (b.hit > a.hit ? b : a));
+  const sufix = state.season === "any" ? "" : ` (${t.tAnual})`;
+
+  const tile = (k, v, u, s) => {
+    const d = document.createElement("div"); d.className = "tile";
+    const a = document.createElement("div"); a.className = "k"; a.textContent = k;
+    const b = document.createElement("div"); b.className = "v"; b.textContent = v;
+    if (u) { const uu = document.createElement("span"); uu.className = "u"; uu.textContent = " " + u; b.append(uu); }
+    const c = document.createElement("div"); c.className = "s"; c.textContent = s;
+    d.append(a, b, c);
+    return d;
+  };
+  tiles.append(tile(t.tTotal, nf(total), unitat(), t.tTotalSub(nf(obs))));
+  tiles.append(tile(t.tPeak(unitat()), String(cim.any), "",
+    `${nf(cim.hit)} ${unitat()}${cim.complet ? "" : " · " + t.tPartial}`));
+  if (m.rec) {
+    tiles.append(tile(t.tHigh + sufix, `${nf(m.rec.alt, 1)} °C`, "", dataLlarga(m.rec.altData)));
+    tiles.append(tile(t.tLow + sufix, `${nf(m.rec.baix, 1)} °C`, "", dataLlarga(m.rec.baixData)));
+  }
+
+  // capçaleres
+  const u = majuscula(unitat());
+  document.getElementById("t-count").textContent = t.pCount(u, thrText());
+  document.getElementById("s-count").textContent =
+    t.sCount + (m.apilat ? " " + t.sCountStack : "");
+  document.getElementById("t-mean").textContent =
+    t.pMean(majuscula(t.vars[state.v].curt), t.seasonPhrase[state.season]);
+  document.getElementById("s-mean").textContent = t.sMean;
+  document.getElementById("t-heat").textContent = t.pHeat(u, thrText());
+  document.getElementById("s-heat").textContent = t.sHeat;
+
+  llegenda(m);
+}
+
+const majuscula = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+function escapa(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function dataLlarga(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Intl.DateTimeFormat(state.lang === "ca" ? "ca-ES" : "en-GB", { dateStyle: "long" })
+    .format(new Date(Date.UTC(y, m - 1, d)));
+}
+
+function llegenda(m) {
+  const t = L();
+  const posa = (id, items) => {
+    const c = document.getElementById(id);
+    buida(c);
+    for (const [cls, text] of items) {
+      const s = document.createElement("span");
+      const i = document.createElement("i");
+      i.className = cls;
+      s.append(i, document.createTextNode(text));
+      c.append(s);
+    }
+  };
+  const count = [["swatch", t.seasons[state.season]]];
+  if (m.apilat) count.push(["swatch na", t.lRest]);
+  if (m.periodes) count.push(["rule-key", t.lPeriod]);
+  if (m.files.some((f) => !f.complet)) count.push(["swatch na", t.lPartial]);
+  posa("l-count", count);
+  posa("l-mean", m.periodes ? [["rule-key", t.lPeriod]] : []);
+
+  const heat = document.getElementById("l-heat");
+  buida(heat);
+  let max = 0;
+  for (const f of m.files) for (let mes = 1; mes <= 12; mes++) max = Math.max(max, f.cel[mes].c);
+  const bar = document.createElement("div");
+  bar.className = "scale-bar";
+  bar.style.background = "linear-gradient(to right, color-mix(in srgb, var(--accent) 8%, var(--heat-base)), var(--accent))";
+  heat.append(document.createTextNode("0"), bar, document.createTextNode(nf(max)));
+}
+
+/* --- taula ------------------------------------------------------------------ */
+
+function dibuixaTaula(m) {
+  const t = L();
+  const head = document.getElementById("t-head");
+  buida(head);
+  const cols = [t.thYear, `${t.thDays} (${unitat()})`, ...(m.apilat ? [t.thRest] : []),
+                `${t.thMean} (°C)`, t.thObs, t.thCov];
+  for (const c of cols) {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = c;
+    head.append(th);
+  }
   const tb = document.querySelector("#tabla tbody");
-  tb.textContent = "";
-  for (const p of [...punts].sort((a, b) => b.decada - a.decada)) {
+  buida(tb);
+  for (const f of m.files) {
     const tr = document.createElement("tr");
-    const cel = (t, num) => {
+    if (!f.complet) tr.className = "partial";
+    const vals = [String(f.any), nf(f.hit), ...(m.apilat ? [nf(f.resta)] : []),
+                  f.mitjana == null ? "—" : nf(f.mitjana, 1), nf(f.obs),
+                  nf(f.cobertura * 100, 0) + " %"];
+    for (const v of vals) {
       const td = document.createElement("td");
-      if (num) td.className = "num";
-      td.textContent = t;
-      return td;
-    };
-    tr.append(
-      cel(p.est.nom || p.est.codi),
-      cel(nf(0).format(p.est.altitud), true),
-      cel(signe(p.decada), true),
-      cel(nf(state.metrica === "jja" ? 1 : 0).format(p.mitjana), true),
-      cel(String(p.nAnys), true)
-    );
+      td.textContent = v;
+      tr.append(td);
+    }
     tb.append(tr);
   }
 }
 
-/* --- xifra principal ------------------------------------------------------ */
+/* --- controls ---------------------------------------------------------------- */
 
-async function dibuixaHero(punts) {
-  const drecera = nomDrecera(META.presets, state.variable, state.op, state.llindar);
-
-  document.getElementById("hero-figure").textContent =
-    punts.length ? `${signe(mediana(punts.map((p) => p.decada)))} ${unitat()}` : "—";
-
-  const cap = document.getElementById("hero-caption");
-  cap.textContent = "";
-  const forta = document.createElement("strong");
-  forta.textContent = state.metrica === "jja"
-    ? nomMetrica("jja", state.variable)
-    : (drecera ? drecera.plural : nomMetrica("llindar", state.variable, state.op, state.llindar));
-  cap.append(
-    state.metrica === "jja" ? "Variació mediana de la " : "Variació mediana de les ", forta,
-    ` per dècada entre ${state.finestra.replace("-", " i ")}, sobre ${punts.length} estacions `,
-    `amb almenys el ${Math.round(COBERTURA * 100)} % dels anys complets. `
-  );
-  const r = pearson(punts.map((p) => p.est.altitud), punts.map((p) => p.decada));
-  if (r != null) {
-    cap.append(`Correlació amb l'altitud: r = ${nf(2).format(r)}.`);
+function omplirEstacions() {
+  const sel = document.getElementById("f-station");
+  buida(sel);
+  const perComarca = new Map();
+  for (const s of INDEX) {
+    const c = s.comarca || "—";
+    if (!perComarca.has(c)) perComarca.set(c, []);
+    perComarca.get(c).push(s);
   }
-
-  // La comparacio entre finestres es el nucli metodologic del projecte, aixi que
-  // es calcula sempre i es ensenya al costat, no amagada a la documentacio.
-  const cont = document.getElementById("windows");
-  cont.textContent = "";
-  const hist = await histograma(state.variable);
-  const guardat = state.finestra;
-  for (const f of FINESTRES) {
-    state.finestra = f.id;
-    const p = calcula(hist);
-    const d = document.createElement("div");
-    const k = document.createElement("span"); k.className = "k";
-    k.textContent = `${f.de}–${f.a} · ${p.length} estacions`;
-    const v = document.createElement("span"); v.className = "v";
-    v.textContent = p.length ? `${signe(mediana(p.map((x) => x.decada)))} ${unitat()}` : "—";
-    d.append(k, v);
-    cont.append(d);
+  for (const c of [...perComarca.keys()].sort((a, b) => a.localeCompare(b, "ca"))) {
+    const g = document.createElement("optgroup");
+    g.label = c;
+    for (const s of perComarca.get(c)) {
+      const o = document.createElement("option");
+      o.value = s.codi;
+      o.textContent = `${s.nom}${s.altitud != null ? ` (${s.altitud} m)` : ""}` +
+        (s.estat === "Operativa" ? "" : " ·");
+      g.append(o);
+    }
+    sel.append(g);
   }
-  state.finestra = guardat;
 }
 
-/* --- controls -------------------------------------------------------------- */
+function textosFixos() {
+  const t = L();
+  document.documentElement.lang = t.codi;
+  const anys = INDEX.reduce((a, s) => [Math.min(a[0], s.y0), Math.max(a[1], s.y1)], [9999, 0]);
+  document.getElementById("x-eyebrow").textContent = t.eyebrow(anys[0], anys[1]);
+  document.getElementById("x-h1").textContent = t.h1;
+  document.getElementById("x-lede").textContent = t.lede(nf(INDEX.length));
+  const set = (id, v) => { document.getElementById(id).textContent = v; };
+  set("x-l-station", t.lStation); set("x-l-var", t.lVar); set("x-l-op", t.lOp);
+  set("x-l-thr", t.lThr); set("x-l-season", t.lSeason); set("x-l-years", t.lYears);
+  set("x-l-split", t.lSplit); set("x-l-presets", t.lPresets);
+  set("thr-help", t.hThr); set("x-h-years", t.hYears); set("x-h-split", t.hSplit);
+  set("op-ge", t.opGe); set("op-le", t.opLt);
+  set("x-table-summary", t.tableSummary);
 
-function construeixControls() {
-  const met = document.getElementById("met-seg");
-  for (const k of ["jja", "llindar"]) {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = T.metriques[k].nom;
-    b.addEventListener("click", () => { state.metrica = k; render(); });
-    met.append(b);
+  const fv = document.getElementById("f-var");
+  buida(fv);
+  for (const k of ["tn", "tx"]) {
+    const o = document.createElement("option");
+    o.value = k; o.textContent = t.vars[k].nom;
+    fv.append(o);
+  }
+  const fs = document.getElementById("f-season");
+  buida(fs);
+  for (const k of Object.keys(SEASONS)) {
+    const o = document.createElement("option");
+    o.value = k; o.textContent = t.seasons[k];
+    fs.append(o);
   }
 
-  const seg = document.getElementById("var-seg");
-  for (const v of ["tn", "tx"]) {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = T.variables[v].curt;
-    b.setAttribute("aria-pressed", String(state.variable === v));
-    b.addEventListener("click", () => { state.variable = v; state.estacio = null; render(); });
-    seg.append(b);
-  }
-
-  const win = document.getElementById("win-seg");
-  for (const f of FINESTRES) {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = `${f.de}–${f.a}`;
-    b.setAttribute("aria-pressed", String(state.finestra === f.id));
-    b.addEventListener("click", () => { state.finestra = f.id; render(); });
-    win.append(b);
-  }
-
-  const pre = document.getElementById("presets");
+  const pl = document.getElementById("preset-list");
+  buida(pl);
   for (const p of META.presets) {
     const b = document.createElement("button");
     b.type = "button";
-    b.textContent = (T.presets[p.id] || {}).nom || p.id;
+    b.className = "chip";
+    b.textContent = `${nomPreset(p)} ${p.op === ">=" ? "≥" : "<"} ${nf(p.value, 0)} °C`;
     b.addEventListener("click", () => {
-      // Triar una drecera vol dir voler el recompte, no la mitjana.
-      state.metrica = "llindar";
-      state.variable = p.var; state.op = p.op; state.llindar = p.value;
+      state.v = p.var;
+      state.op = p.op === ">=" ? "ge" : "lt";
+      state.thr = p.value;
       render();
     });
-    pre.append(b);
+    pl.append(b);
+  }
+}
+
+function nomPreset(p) {
+  const noms = {
+    ca: { nit_tropical: "Nit tropical", nit_torrida: "Nit tòrrida", dia_estiu: "Dia d'estiu",
+          dia_caloros: "Dia calorós", dia_torrid: "Dia tòrrid", glacada: "Glaçada" },
+    en: { nit_tropical: "Tropical night", nit_torrida: "Torrid night", dia_estiu: "Summer day",
+          dia_caloros: "Hot day", dia_torrid: "Scorching day", glacada: "Frost day" },
+  };
+  return noms[state.lang][p.id] || p.id;
+}
+
+function sincronitza() {
+  const t = L();
+  document.documentElement.setAttribute("data-var", state.v);
+  document.getElementById("f-station").value = state.st;
+  document.getElementById("f-var").value = state.v;
+  document.getElementById("f-season").value = state.season;
+  document.getElementById("op-ge").setAttribute("aria-pressed", String(state.op === "ge"));
+  document.getElementById("op-le").setAttribute("aria-pressed", String(state.op === "lt"));
+  document.getElementById("f-thr").value = state.thr;
+  document.getElementById("thr-val").textContent = thrText();
+  document.getElementById("yr-val").textContent = `${state.y0}–${state.y1}`;
+
+  for (const b of document.querySelectorAll("#preset-list .chip")) {
+    const p = META.presets[[...b.parentNode.children].indexOf(b)];
+    b.setAttribute("aria-pressed", String(
+      p.var === state.v && (p.op === ">=" ? "ge" : "lt") === state.op && p.value === state.thr));
+  }
+  for (const b of document.querySelectorAll("#lang-group button")) {
+    b.setAttribute("aria-pressed", String(b.dataset.lang === state.lang));
   }
 
-  const sl = document.getElementById("llindar");
-  sl.addEventListener("input", () => {
-    state.metrica = "llindar";
-    state.llindar = +sl.value;
-    state.op = ">=";
+  const anys = Object.keys(ST.anys).map(Number);
+  const lo = Math.min(...anys), hi = Math.max(...anys);
+  const a = document.getElementById("yr-a"), b = document.getElementById("yr-b");
+  a.min = b.min = lo; a.max = b.max = hi;
+  a.value = state.y0; b.value = state.y1;
+  // La pista va encaixada 7 px a cada costat perquè els polzes hi càpiguen;
+  // el rebliment ha de viure dins d'aquest mateix tram, no de l'amplada total.
+  const f = document.getElementById("yr-fill");
+  const frac = (v) => (v - lo) / Math.max(1, hi - lo);
+  f.style.left = `calc(7px + (100% - 14px) * ${frac(state.y0).toFixed(4)})`;
+  f.style.width = `calc((100% - 14px) * ${Math.max(0, frac(state.y1) - frac(state.y0)).toFixed(4)})`;
+
+  const sp = document.getElementById("f-split");
+  sp.min = state.y0 + 1; sp.max = state.y1;
+  sp.value = state.split ?? Math.round((state.y0 + state.y1) / 2);
+}
+
+function llegeixHash() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  if (p.get("lang") && I18N[p.get("lang")]) state.lang = p.get("lang");
+  if (p.get("st")) state.st = p.get("st");
+  if (p.get("v")) state.v = p.get("v") === "tx" ? "tx" : "tn";
+  if (p.get("op")) state.op = p.get("op") === "lt" ? "lt" : "ge";
+  if (p.get("thr")) state.thr = +p.get("thr");
+  if (p.get("season") && SEASONS[p.get("season")]) state.season = p.get("season");
+  if (p.get("y")) {
+    const [a, b] = p.get("y").split("-").map(Number);
+    if (a && b) { state.y0 = a; state.y1 = b; }
+  }
+  if (p.get("split")) state.split = +p.get("split");
+}
+
+function escriuHash() {
+  const p = new URLSearchParams({
+    st: state.st, v: state.v, op: state.op, thr: String(state.thr),
+    season: state.season, y: `${state.y0}-${state.y1}`, lang: state.lang,
+  });
+  if (state.split != null) p.set("split", String(state.split));
+  history.replaceState(null, "", "#" + p.toString());
+}
+
+/* --- render ------------------------------------------------------------------ */
+
+function render() {
+  sincronitza();
+  const m = model();
+  dibuixaHist(m);
+  dibuixaText(m);
+  dibuixaCount(m);
+  dibuixaMean(m);
+  dibuixaHeat(m);
+  dibuixaTaula(m);
+  document.getElementById("split-val").textContent =
+    `${m.tall ?? "—"}${state.split == null ? " · " + L().auto : ""}`;
+  peu();
+  escriuHash();
+}
+
+function peu() {
+  const t = L();
+  const d = new Intl.DateTimeFormat(state.lang === "ca" ? "ca-ES" : "en-GB", { dateStyle: "long" });
+  const dh = new Intl.DateTimeFormat(state.lang === "ca" ? "ca-ES" : "en-GB",
+    { dateStyle: "long", timeStyle: "short" });
+  document.getElementById("x-footer").innerHTML = t.footer({
+    dataset: DATASET, legal: LEGAL, codi: REPO,
+    metodologia: `${REPO}/blob/main/docs/METODOLOGIA.md`,
+    crues: escapa(ST.source_url),
+    font: dh.format(new Date(META.source_last_updated)),
+    generat: d.format(new Date(META.generated_at)),
+  });
+}
+
+async function carregaEstacio(codi) {
+  const r = await fetch(`data/st/${encodeURIComponent(codi)}.json`);
+  ST = await r.json();
+  const anys = Object.keys(ST.anys).map(Number);
+  const lo = Math.min(...anys), hi = Math.max(...anys);
+  if (state.y0 == null || state.y0 < lo || state.y0 > hi) state.y0 = lo;
+  if (state.y1 == null || state.y1 > hi || state.y1 < lo) state.y1 = hi;
+  state.split = null;
+}
+
+function initControls() {
+  document.getElementById("f-station").addEventListener("change", async (e) => {
+    state.st = e.target.value;
+    state.y0 = state.y1 = null;
+    await carregaEstacio(state.st);
     render();
   });
-}
-
-function sincronitzaControls() {
-  const llindars = state.metrica === "llindar";
-
-  [...document.getElementById("met-seg").children].forEach((b, i) =>
-    b.setAttribute("aria-pressed", String(["jja", "llindar"][i] === state.metrica)));
-  [...document.getElementById("var-seg").children].forEach((b, i) =>
-    b.setAttribute("aria-pressed", String(["tn", "tx"][i] === state.variable)));
-  [...document.getElementById("win-seg").children].forEach((b, i) =>
-    b.setAttribute("aria-pressed", String(FINESTRES[i].id === state.finestra)));
-  [...document.getElementById("presets").children].forEach((b, i) => {
-    const p = META.presets[i];
-    b.setAttribute("aria-pressed", String(llindars &&
-      p.var === state.variable && p.op === state.op && p.value === state.llindar));
+  document.getElementById("f-var").addEventListener("change", (e) => {
+    state.v = e.target.value; render();
+  });
+  document.getElementById("f-season").addEventListener("change", (e) => {
+    state.season = e.target.value; render();
+  });
+  document.getElementById("op-ge").addEventListener("click", () => { state.op = "ge"; render(); });
+  document.getElementById("op-le").addEventListener("click", () => { state.op = "lt"; render(); });
+  document.getElementById("f-thr").addEventListener("input", (e) => {
+    state.thr = +e.target.value; render();
+  });
+  document.getElementById("f-split").addEventListener("input", (e) => {
+    state.split = +e.target.value; render();
   });
 
-  const sl = document.getElementById("llindar");
-  sl.value = state.llindar;
-  document.getElementById("llindar-out").textContent =
-    `${state.op === ">=" ? "≥" : "<"} ${state.llindar} °C`;
-  // El llindar no vol dir res quan es mesura la mitjana: es desactiva en comptes
-  // de deixar-lo actiu sense efecte.
-  document.getElementById("llindar-control").dataset.inactiu = String(!llindars);
-  sl.disabled = !llindars;
+  const a = document.getElementById("yr-a"), b = document.getElementById("yr-b");
+  const rang = () => {
+    let x = +a.value, y = +b.value;
+    if (x > y) { const s = x; x = y; y = s; }
+    state.y0 = x; state.y1 = y;
+    state.split = null;
+    render();
+  };
+  a.addEventListener("input", rang);
+  b.addEventListener("input", rang);
 
-  document.getElementById("avis-zero").hidden = !llindars;
-}
+  // Canviar nomes l'ancoratge no recarrega la pagina. Sense aixo, un enllac
+  // compartit funcionava en obrir-lo de nou pero no si ja tenies la pagina
+  // oberta, que es justament el cas de clicar-lo des d'un article.
+  window.addEventListener("hashchange", async () => {
+    const abans = state.st;
+    llegeixHash();
+    if (state.st !== abans) {
+      state.y0 = state.y1 = null;
+      await carregaEstacio(state.st);
+    }
+    textosFixos();
+    render();
+  });
 
-function selecciona(codi) {
-  state.estacio = state.estacio === codi ? null : codi;
-  render();
-}
-
-/* --- render ---------------------------------------------------------------- */
-
-async function render() {
-  sincronitzaControls();
-  const hist = await histograma(state.variable);
-  const punts = calcula(hist);
-
-  document.getElementById("scatter-title").textContent = state.metrica === "jja"
-    ? `Tendència de la ${nomMetrica("jja", state.variable)} contra l'altitud`
-    : `Tendència de les ${nomMetrica("llindar", state.variable, state.op, state.llindar)} contra l'altitud`;
-
-  await dibuixaHero(punts);
-  dibuixaDispersio(punts);
-  dibuixaTaula(punts);
-
-  const card = document.getElementById("station-card");
-  if (state.estacio) {
-    const est = ESTACIONS.find((e) => e.codi === state.estacio);
-    card.hidden = false;
-    document.getElementById("station-name").textContent = est.nom || est.codi;
-    document.getElementById("station-meta").textContent =
-      [est.municipi, est.comarca, est.altitud != null ? `${nf(0).format(est.altitud)} m` : null,
-       est.emplacament, est.estat !== "Operativa" ? T.ui.desmantellada : null]
-        .filter(Boolean).join(" · ");
-    dibuixaEstacio(est, hist);
-  } else {
-    card.hidden = true;
+  const lg = document.getElementById("lang-group");
+  for (const [k, v] of Object.entries(I18N)) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.dataset.lang = k;
+    btn.textContent = v.nom;
+    btn.addEventListener("click", () => { state.lang = k; textosFixos(); render(); });
+    lg.append(btn);
   }
 }
 
-/* --- arrencada -------------------------------------------------------------- */
+/* --- arrencada ---------------------------------------------------------------- */
 
 (async function () {
-  const [meta, estacions] = await Promise.all([
+  [META, INDEX] = await Promise.all([
     fetch("data/meta.json").then((r) => r.json()),
-    fetch("data/stations.json").then((r) => r.json()),
+    fetch("data/index.json").then((r) => r.json()),
   ]);
-  META = meta;
-  ESTACIONS = estacions;
-  DESTACADES = new Set(meta.featured.map((f) => f.codi));
+  COMPLETESA = META.qc?.rules?.year_completeness ?? 0.95;
 
-  construeixControls();
-  document.getElementById("tancar").addEventListener("click", () => selecciona(null));
+  llegeixHash();
+  // Badalona-Museu per defecte: és l'estació que va originar el projecte.
+  if (!state.st || !INDEX.some((s) => s.codi === state.st)) state.st = "WU";
 
-  // L'avis legal obliga a indicar la data de la darrera actualitzacio de la font.
-  const fmtData = new Intl.DateTimeFormat("ca-ES", { dateStyle: "long" });
-  const fmtHora = new Intl.DateTimeFormat("ca-ES", { dateStyle: "long", timeStyle: "short" });
-  document.getElementById("updated").textContent =
-    `Darrera actualització de la font: ${fmtHora.format(new Date(meta.source_last_updated))}. ` +
-    `Agregats generats el ${fmtData.format(new Date(meta.generated_at))}.`;
-  document.getElementById("stations-count").textContent = nf(0).format(meta.qc.stations);
-
-  await render();
+  omplirEstacions();
+  initControls();
+  textosFixos();
+  await carregaEstacio(state.st);
+  render();
 })();

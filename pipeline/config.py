@@ -104,9 +104,16 @@ FEATURED = [
 FEATURED_MIN_YEARS = 5
 FEATURED_STATE = "Operativa"
 
-# Rang de bins (en graus enters) dels histogrames publicats per estacio i any.
-# Les temperatures fora d'aquest rang s'acumulen als extrems; cap llindar
-# d'interes climatic hi cau a prop.
+# Histogrames publicats: rang en graus i amplada de bin.
+#
+# 0,5 graus i no 1: l'histograma es dibuixa darrere del control de llindar, i a
+# 1 grau el perfil surt massa dentat per llegir-hi la forma de la distribucio.
+# Tambe fa que el llindar es pugui moure de mig en mig grau, que es la resolucio
+# a la qual la font publica els valors arrodonits.
+#
+# Les temperatures fora del rang s'acumulen als bins extrems, de manera que cap
+# dia es perd del recompte total. Cap llindar d'interes climatic hi cau a prop.
+HIST_BIN = 0.5
 HIST_RANGE = {"tn": (-30, 35), "tx": (-25, 50)}
 
 # --- Atribucio ---------------------------------------------------------------

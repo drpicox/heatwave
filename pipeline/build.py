@@ -125,14 +125,45 @@ def build_stations(stations: pd.DataFrame, cov: pd.DataFrame, jja: pd.DataFrame)
     return out
 
 
-def build_details(daily: pd.DataFrame, presets: pd.DataFrame) -> dict[str, dict]:
-    """Fitxa de detall de cada estacio: histogrames i mitjanes mes a mes.
+def build_index(stations: pd.DataFrame, cov: pd.DataFrame) -> list[dict]:
+    """Index compacte: el minim per omplir el selector i situar l'estacio.
 
-    Les dates de primera i ultima aparicio dels llindars de drecera si que hi
-    van, perque son l'unica cosa que un histograma no pot reconstruir i son el
-    que permet dir si la temporada de nits tropicals s'allarga.
+    Es l'unic fitxer que la pagina carrega sencer. Tot el detall viu a la fitxa
+    de cada estacio i nomes es baixa quan se'n tria una.
     """
-    by_station = {}
+    meta = stations.set_index("codi_estacio").to_dict("index")
+    g = cov.groupby("codi_estacio")
+    out = []
+    for code, grp in g:
+        m = meta.get(code, {})
+        out.append({
+            "codi": code,
+            "nom": m.get("nom_estacio") or code,
+            "municipi": m.get("nom_municipi"),
+            "comarca": m.get("nom_comarca"),
+            "altitud": m.get("altitud"),
+            "estat": m.get("nom_estat_ema"),
+            "y0": int(grp["year"].min()),
+            "y1": int(grp["year"].max()),
+            "dies": int(grp["n_tn"].sum()),
+            "complets": int(grp["complete"].sum()),
+        })
+    out.sort(key=lambda s: (s["nom"] or "").lower())
+    return out
+
+
+def build_details(daily: pd.DataFrame, cov: pd.DataFrame, presets: pd.DataFrame,
+                  stations: pd.DataFrame) -> dict[str, dict]:
+    """Fitxa autocontinguda de cada estacio.
+
+    Hi ha tot el que la pagina necessita per a una estacio: metadades, cobertura
+    any a any, histogrames i mitjanes mes a mes, i els records amb la seva data.
+    Amb aixo el navegador pot triar qualsevol llindar, qualsevol conjunt de
+    mesos i qualsevol rang d'anys sense tornar a demanar res.
+    """
+    meta = stations.set_index("codi_estacio").to_dict("index")
+
+    dates = {}
     for code, grp in presets.groupby("codi_estacio"):
         p = {}
         for _, r in grp.iterrows():
@@ -140,19 +171,41 @@ def build_details(daily: pd.DataFrame, presets: pd.DataFrame) -> dict[str, dict]
                 pid = preset["id"]
                 if r.get(f"{pid}_first"):
                     p.setdefault(pid, {})[str(int(r["year"]))] = [
-                        r[f"{pid}_first"],
-                        r[f"{pid}_last"],
+                        r[f"{pid}_first"], r[f"{pid}_last"],
                     ]
-        by_station[code] = p
+        dates[code] = p
+
+    cobertura = {}
+    for code, grp in cov.groupby("codi_estacio"):
+        cobertura[code] = {
+            str(int(r["year"])): {
+                "n": int(r["n_tn"]), "nx": int(r["n_tx"]),
+                "c": bool(r["complete"]), "jc": bool(r["jja_complete"]),
+                "og": bool(r["ongoing"]),
+            }
+            for _, r in grp.sort_values("year").iterrows()
+        }
 
     out = {}
     for code, grp in daily.groupby("codi_estacio", sort=True):
         hists, means = metrics.monthly_detail(grp)
+        m = meta.get(code, {})
         out[code] = {
             "codi": code,
+            "nom": m.get("nom_estacio") or code,
+            "municipi": m.get("nom_municipi"),
+            "comarca": m.get("nom_comarca"),
+            "altitud": m.get("altitud"),
+            "lat": m.get("latitud"),
+            "lon": m.get("longitud"),
+            "emplacament": m.get("emplacament"),
+            "estat": m.get("nom_estat_ema"),
+            "bin": config.HIST_BIN,
+            "anys": cobertura.get(code, {}),
             "h": hists,
             "m": means,
-            "p": by_station.get(code, {}),
+            "rec": metrics.records(grp),
+            "p": dates.get(code, {}),
             "source_url": source_url(code),
         }
     return out
@@ -217,6 +270,7 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
     hists = metrics.histograms(daily)
 
     sizes = {}
+    sizes["index.json"] = _write(config.SITE_DATA / "index.json", build_index(stations, cov))
     sizes["stations.json"] = _write(
         config.SITE_DATA / "stations.json",
         build_stations(stations, cov, jja),
@@ -226,10 +280,10 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
         lo, hi = config.HIST_RANGE[short]
         sizes[f"hist-{short}.json"] = _write(
             config.SITE_DATA / f"hist-{short}.json",
-            {"var": short, "bin": 1, "range": [lo, hi], "stations": per_station},
+            {"var": short, "bin": config.HIST_BIN, "range": [lo, hi], "stations": per_station},
         )
 
-    details = build_details(daily, presets)
+    details = build_details(daily, cov, presets, stations)
     config.STATION_DATA.mkdir(parents=True, exist_ok=True)
     # Neteja les estacions que hagin desaparegut de la font, perque no quedin
     # fitxers orfes al repo dient coses que ja no diem.

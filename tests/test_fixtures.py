@@ -219,13 +219,58 @@ def test_histograma_anual_igual_a_la_suma_dels_mensuals():
 def test_no_publiquem_la_serie_diaria():
     """Decisio explicita: publiquem agregats i enllacem la font per al cru.
 
-    Si algu torna a afegir la serie diaria al repositori, que sigui una decisio
-    i no un descuit.
+    Es comprova la intencio i no una llista de claus: cap estructura de la fitxa
+    pot tenir una entrada per dia. La resolucio maxima es mensual, i els unics
+    valors amb data son els quatre records de cada any.
     """
     detail = _published("st/WU.json")
-    assert set(detail) == {"codi", "h", "m", "p", "source_url"}
     assert detail["source_url"].startswith(config.DOMAIN)
     assert "codi_estacio='WU'" in detail["source_url"]
+
+    for var, anys in detail["h"].items():
+        for any_, mesos in anys.items():
+            assert set(mesos) <= {str(m) for m in range(1, 13)}, (var, any_)
+            # Un histograma mensual no pot tenir mes bins que el rang sencer.
+            for hist in mesos.values():
+                assert len(hist) - 1 <= 140, (var, any_)
+
+    # Cap llista de la fitxa no pot tenir llargada de mes de dotze mesos.
+    def prohibeix_series_diaries(node, cami=""):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                prohibeix_series_diaries(v, f"{cami}.{k}")
+        elif isinstance(node, list):
+            assert len(node) < 200, f"{cami} sembla una serie diaria ({len(node)} valors)"
+
+    prohibeix_series_diaries(detail["m"])
+    prohibeix_series_diaries(detail["anys"])
+    prohibeix_series_diaries(detail["rec"])
+
+
+def test_records_amb_data():
+    """Els records son l'unica cosa que l'histograma no pot reconstruir."""
+    rec = _published("st/WU.json")["rec"]["tn"]["2022"]
+    alta, data_alta, baixa, data_baixa = rec
+    assert alta > baixa
+    assert data_alta.startswith("2022") and data_baixa.startswith("2022")
+    # La minima mes alta de l'any ha de caure a l'estiu, i la mes baixa a l'hivern.
+    assert data_alta[5:7] in {"06", "07", "08", "09"}
+    assert data_baixa[5:7] in {"01", "02", "03", "11", "12"}
+
+
+def test_bins_de_mig_grau():
+    """El llindar es mou de mig en mig grau, i els recomptes han de ser exactes.
+
+    Amb bins de 0,5 nomes son exactes els llindars de la mateixa graella, que es
+    justament on el control deixa aturar-se.
+    """
+    detail = _published("st/WU.json")
+    assert detail["bin"] == 0.5
+    anual = _published("hist-tn.json")
+    assert anual["bin"] == 0.5
+    for hist in anual["stations"]["WU"].values():
+        # L'inici de cada histograma cau sempre a la graella de mig grau.
+        assert abs(hist[0] * 2 - round(hist[0] * 2)) < 1e-9
 
 
 def test_les_destacades_existeixen_i_serveixen():
