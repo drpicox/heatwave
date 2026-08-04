@@ -170,7 +170,7 @@ def load(years: list[int] | None = None) -> tuple[pd.DataFrame, dict]:
             keep = {str(y) for y in years}
             paths = [p for p in paths if p.stem.split("-")[-1] in keep]
         if not paths:
-            raise FileNotFoundError(f"no hi ha cache per a {short}; corre ./dothething")
+            raise FileNotFoundError(f"no hi ha cache per a {short}; corre ./dothething.sh")
         df = pd.concat((pd.read_parquet(p) for p in paths), ignore_index=True)
 
         bad = df["estat"].astype(str) == NOT_REPRESENTATIVE

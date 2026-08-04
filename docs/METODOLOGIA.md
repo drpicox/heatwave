@@ -199,7 +199,7 @@ estació a estació i mai agregant tota la xarxa en un sol número.
 
 ## 7. Reproduir-ho
 
-Tot el que hi ha al web surt de `./dothething`, que descarrega, filtra, calcula i
+Tot el que hi ha al web surt de `./dothething.sh`, que descarrega, filtra, calcula i
 escriu `site/data/`. El fitxer `site/data/meta.json` porta la data de generació,
 la data de la darrera actualització de la font i els comptadors de tot el que
 s'ha descartat.

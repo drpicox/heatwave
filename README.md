@@ -33,12 +33,12 @@ dades del Meteocat: cada fitxa d'estació enllaça les dades brutes directament 
 la font. La portada carrega 172 KB comprimits i la fitxa d'una estació 7 KB més.
 
 ```
-./dothething            baixa el que falti, calcula i escriu site/data/
-./dothething --full     ignora el cache i ho refà tot
-./dothething --years 2005-2026
-./dothething --stations WU,UP,D5
-./dothething --test     corre els tests de fixtures
-./dothething --serve    serveix site/ a http://localhost:8000
+./dothething.sh            baixa el que falti, calcula i escriu site/data/
+./dothething.sh --full     ignora el cache i ho refà tot
+./dothething.sh --years 2005-2026
+./dothething.sh --stations WU,UP,D5
+./dothething.sh --test     corre els tests de fixtures
+./dothething.sh --serve    serveix site/ a http://localhost:8000
 ```
 
 La primera execució baixa tota la sèrie (1988 fins avui) i triga uns minuts. Les
@@ -55,7 +55,7 @@ export SOCRATA_APP_TOKEN=...
 ## Estructura
 
 ```
-dothething          punt d'entrada únic
+dothething.sh          punt d'entrada únic
 pipeline/           descàrrega, control de qualitat, càlcul, generació
   socrata.py        client de l'API, amb paginació verificada
   fetch.py          descàrrega i cache per (variable, any)

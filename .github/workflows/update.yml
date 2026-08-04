@@ -40,10 +40,10 @@ jobs:
       - name: Baixa, calcula i escriu site/data
         env:
           SOCRATA_APP_TOKEN: ${{ secrets.SOCRATA_APP_TOKEN }}
-        run: ./dothething
+        run: ./dothething.sh
 
       - name: Comprova les fixtures
-        run: ./dothething --test
+        run: ./dothething.sh --test
 
       - name: Fes commit dels agregats si han canviat
         run: |

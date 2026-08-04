@@ -3,11 +3,11 @@
 # Fa la cosa: baixa el que falti de la XEMA, passa el control de qualitat,
 # calcula i escriu site/data/. Idempotent i incremental.
 #
-#   ./dothething                    tot, incremental
-#   ./dothething --full             ignora el cache i ho refà de zero
-#   ./dothething --stations WU,UP   nomes aquestes estacions (proves rapides)
-#   ./dothething --serve            serveix site/ a http://localhost:8000
-#   ./dothething --test             corre els tests de fixtures
+#   ./dothething.sh                    tot, incremental
+#   ./dothething.sh --full             ignora el cache i ho refà de zero
+#   ./dothething.sh --stations WU,UP   nomes aquestes estacions (proves rapides)
+#   ./dothething.sh --serve            serveix site/ a http://localhost:8000
+#   ./dothething.sh --test             corre els tests de fixtures
 #
 # Si tens un app token de Socrata, exporta SOCRATA_APP_TOKEN abans de cridar-lo.
 

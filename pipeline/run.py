@@ -1,4 +1,4 @@
-"""Orquestracio. El que crida ./dothething."""
+"""Orquestracio. El que crida ./dothething.sh."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def serve(port: int = 8000):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="dothething")
+    p = argparse.ArgumentParser(prog="dothething.sh")
     p.add_argument("--full", action="store_true", help="ignora el cache i ho refa tot")
     p.add_argument("--years", help="rang d'anys, p.ex. 2005-2026")
     p.add_argument("--stations", help="filtra la sortida a aquests codis, separats per comes")

@@ -81,4 +81,4 @@ El codi és obert. Els agregats es poden reutilitzar citant tant la font origina
 com aquest projecte, però si hi ha discrepància té raó el Meteocat.
 
 Les dades crues descarregades per generar-ho no es versionen (`cache/` està a
-`.gitignore`); es reconstrueixen amb `./dothething`.
+`.gitignore`); es reconstrueixen amb `./dothething.sh`.

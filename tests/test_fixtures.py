@@ -66,7 +66,7 @@ def daily():
     try:
         df, _ = fetch.load()
     except FileNotFoundError:
-        pytest.skip("no hi ha cache; corre ./dothething primer")
+        pytest.skip("no hi ha cache; corre ./dothething.sh primer")
     return df
 
 
@@ -161,7 +161,7 @@ def test_any_en_curs_marcat_com_a_parcial(coverage):
 def _published(name):
     path = config.SITE_DATA / name
     if not path.exists():
-        pytest.skip("no hi ha site/data; corre ./dothething primer")
+        pytest.skip("no hi ha site/data; corre ./dothething.sh primer")
     with open(path, encoding="utf-8") as fh:
         return json.load(fh)
 
