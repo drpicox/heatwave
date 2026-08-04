@@ -60,9 +60,10 @@
   const el = document.getElementById('updated');
   try {
     const meta = await (await fetch('data/meta.json')).json();
-    const fmt = new Intl.DateTimeFormat('ca-ES', { dateStyle: 'long', timeStyle: 'short' });
-    el.textContent = `Darrera actualització de la font: ${fmt.format(new Date(meta.source_last_updated))}. `
-                   + `Agregats generats el ${fmt.format(new Date(meta.generated_at))}.`;
+    const data = new Intl.DateTimeFormat('ca-ES', { dateStyle: 'long' });
+    const moment = new Intl.DateTimeFormat('ca-ES', { dateStyle: 'long', timeStyle: 'short' });
+    el.textContent = `Darrera actualització de la font: ${moment.format(new Date(meta.source_last_updated))}. `
+                   + `Agregats generats el ${data.format(new Date(meta.generated_at))}.`;
   } catch {
     el.remove();
   }

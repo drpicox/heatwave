@@ -242,7 +242,11 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
     sizes["st/*.json"] = total
 
     meta = {
-        "generated_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        # Nomes la data, sense hora, i a proposit: aixi dues execucions del
+        # mateix dia sobre les mateixes dades donen fitxers identics. Amb l'hora,
+        # cada execucio local xocava amb la del cron encara que el contingut fos
+        # el mateix, i tots els merges acabaven en conflicte.
+        "generated_at": dt.date.today().isoformat(),
         "source_last_updated": source_updated,
         "attribution": config.ATTRIBUTION,
         "legal_url": config.LEGAL_URL,
