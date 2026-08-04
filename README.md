@@ -75,6 +75,8 @@ cache/              dades crues descarregades (no es versiona)
   per què. Inclou les limitacions, que són reals: les sèries **no estan
   homogeneïtzades**.
 - [**FONTS.md**](docs/FONTS.md) — datasets, condicions d'ús i atribució.
+- [**BACKLOG.md**](docs/BACKLOG.md) — el que està decidit però no fet, amb el que
+  ja s'ha comprovat de cada cosa.
 
 > Font: Servei Meteorològic de Catalunya (XEMA). Dades obertes de la Generalitat
 > de Catalunya.
