@@ -42,6 +42,9 @@ def main(argv=None):
     p.add_argument("--allow-unknown-estat", action="store_true",
                    help="continua encara que el camp `estat` porti valors nous")
     p.add_argument("--skip-fetch", action="store_true", help="nomes recalcula des del cache")
+    p.add_argument("--wetbulb", action="store_true",
+                   help="baixa el semihorari per trossos i calcula el bulb humit")
+    p.add_argument("--wetbulb-years", help="rang d'anys del bulb humit, p.ex. 2009-2026")
     p.add_argument("--geo", action="store_true",
                    help="refa el contorn de comarques (els limits no canvien mai)")
     p.add_argument("--serve", action="store_true")
@@ -75,6 +78,16 @@ def main(argv=None):
         print(f"    {report['downloaded']} fitxers de cache escrits, "
               f"{client.requests_made} peticions")
         source_updated = client.last_updated(config.DS_DAILY)
+
+    if args.wetbulb:
+        from . import subdaily
+        anys = parse_years(args.wetbulb_years) if args.wetbulb_years else subdaily.anys_disponibles()
+        anys = [y for y in anys if y >= subdaily.PRIMER_ANY]
+        print(f"==> bulb humit: semihorari {anys[0]}-{anys[-1]}, maig-octubre")
+        r = subdaily.download(client, anys)
+        print(f"    {r['rows']:,} files noves en {r['chunks']} trossos")
+        print("==> creuant temperatura i humitat instant a instant")
+        subdaily.build_daily(anys)
 
     print("==> metadades d'estacions")
     stations = fetch.fetch_stations(client)

@@ -71,7 +71,17 @@ VAR_INFO = {
     # una precisio que ningu fa servir.
     "hr": {"codi": HRMIT, "unitat": "%", "agg": "mean", "bin": 1.0,
            "range": (0, 100), "decimals": 0, "skewed": False},
+    # Derivada: surt de creuar temperatura i humitat semihoraries i quedar-se
+    # amb la punta de cada dia. Vegeu pipeline/subdaily.py.
+    "wb": {"codi": None, "unitat": "°C", "agg": "max", "bin": 0.5,
+           "range": (-15, 40), "decimals": 1, "skewed": False,
+           # Nomes existeix de maig a octubre. Sense dir-ho, el control de
+           # completesa la marcaria incompleta tots els anys en triar "tot l'any".
+           "mesos": [5, 6, 7, 8, 9, 10]},
 }
+
+# Variables que no es baixen del dataset diari perque es calculen.
+DERIVADES = {"wb"}
 
 # Primer dia amb dada a tot el dataset (verificat: min(data_lectura) = 1988-09-01).
 FIRST_YEAR = 1988
@@ -105,6 +115,11 @@ PRESETS = [
     # tant quanta aigua cau com de fort cau.
     {"id": "intensa", "var": "pi", "op": ">=", "value": 10},
     {"id": "molt_intensa", "var": "pi", "op": ">=", "value": 20},
+    # Llindars de bulb humit: 26 ja es incomode per a qui treballa a fora, 28
+    # limita l'activitat fisica i 31 es perillos fins i tot en repos.
+    {"id": "wb_incomode", "var": "wb", "op": ">=", "value": 26},
+    {"id": "wb_limitant", "var": "wb", "op": ">=", "value": 28},
+    {"id": "wb_perillos", "var": "wb", "op": ">=", "value": 31},
 ]
 
 # --- Quines estacions arriben al web -------------------------------------------

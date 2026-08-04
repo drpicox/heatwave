@@ -9,7 +9,7 @@
  * pipeline.
  */
 
-import { state, INDEX, L, nf, el, buida, unitat, thrText } from "./nucli.js";
+import { state, INDEX, L, nf, el, buida, unitat, thrText, varInfo } from "./nucli.js";
 import { compta, totalHist } from "./model.js";
 import { SEASONS } from "./i18n.js";
 import { mostraTip, amagaTip, linia, titolTip } from "./grafics.js";
@@ -43,7 +43,10 @@ function valors() {
   fora.clear();
   const font = MAPA[state.v];
   const w = font.bin;
-  const mesos = SEASONS[state.season];
+  const propis = varInfo().mesos;
+  const mesos = propis
+    ? SEASONS[state.season].filter((m) => propis.includes(m))
+    : SEASONS[state.season];
   const out = new Map();
 
   for (const [codi, anys] of Object.entries(font.stations)) {

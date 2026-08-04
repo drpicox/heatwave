@@ -30,7 +30,13 @@ export const totalHist = (h) => (h ? h.slice(1).reduce((a, b) => a + b, 0) : 0);
 
 export function model() {
   const w = (ST.bin && ST.bin[state.v]) ?? 0.5;
-  const mesos = SEASONS[state.season];
+  // Hi ha variables que nomes existeixen part de l'any (el bulb humit, de maig
+  // a octubre). L'epoca triada es creua amb els mesos que la variable te, i la
+  // completesa es mesura contra aquesta interseccio i no contra el calendari.
+  const propis = varInfo().mesos;
+  const mesos = propis
+    ? SEASONS[state.season].filter((m) => propis.includes(m))
+    : SEASONS[state.season];
   const dins = new Set(mesos);
   const hVar = ST.h[state.v] || {};
   const mVar = ST.m[state.v] || {};

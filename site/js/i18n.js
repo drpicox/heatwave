@@ -30,6 +30,8 @@ export const I18N = {
       dia_pluja: "Dia de pluja", pluja_forta: "Pluja forta",
       pluja_torrencial: "Pluja torrencial", intensa: "Pluja intensa",
       molt_intensa: "Pluja molt intensa",
+      wb_incomode: "Bulb humit incòmode", wb_limitant: "Bulb humit limitant",
+      wb_perillos: "Bulb humit perillós",
     },
     nom: "Català",
     codi: "ca",
@@ -58,16 +60,19 @@ export const I18N = {
     auto: "automàtic",
 
     vars: {
-      tn: { nom: "Temperatura mínima", curt: "mínima", nit: true },
-      tx: { nom: "Temperatura màxima", curt: "màxima", nit: false },
-      pp: { nom: "Precipitació diària", curt: "pluja", nit: false },
-      pi: { nom: "Intensitat de pluja (màx. en 1 h)", curt: "intensitat", nit: false },
-      tm: { nom: "Temperatura mitjana", curt: "temperatura", nit: false },
-      hr: { nom: "Humitat relativa", curt: "humitat", nit: false },
+      tn: { nom: "Temperatura mínima", curt: "mínima", nit: true, gen: "f" },
+      tx: { nom: "Temperatura màxima", curt: "màxima", nit: false, gen: "f" },
+      pp: { nom: "Precipitació diària", curt: "pluja", nit: false, gen: "f" },
+      pi: { nom: "Intensitat de pluja (màx. en 1 h)", curt: "intensitat", nit: false, gen: "f" },
+      tm: { nom: "Temperatura mitjana", curt: "temperatura", nit: false, gen: "f" },
+      hr: { nom: "Humitat relativa", curt: "humitat", nit: false, gen: "f" },
+      wb: { nom: "Bulb humit (punta del dia)", curt: "bulb humit", nit: false, gen: "m" },
     },
     nit: "nits", dia: "dies", any: "any",
     // Titol del segon panell segons com s'agrega la variable.
-    resum: { mean: "mitjana", sum: "total", max: "màxima" },
+    resum: { mean: { m: "mitjà", f: "mitjana" }, sum: { m: "total", f: "total" },
+             max: { m: "màxim", f: "màxima" } },
+    art: { m: "El", f: "La" },
     secs: (pct) => `El ${pct} % dels dies no plou: l'histograma només mostra els dies amb pluja.`,
 
     seasons: {
@@ -97,7 +102,7 @@ export const I18N = {
     sentence: (d) =>
       `A <em>${d.estacio}</em>, ${d.unitat} amb ${d.varCurt} ${d.cond} ${d.frase} han passat ` +
       `de <em>${d.a}</em> a <em>${d.b}</em> de mitjana anual: ${d.verb}. ` +
-      `La ${d.varCurt} del període es mou de ${d.m0} a ${d.m1} (${d.dm}).`,
+      `${d.art} ${d.varCurt} del període es mou de ${d.m0} a ${d.m1} (${d.dm}).`,
     verbUp: "ha pujat", verbDown: "ha baixat", verbFlat: "s'ha mantingut",
 
     tTotal: "Total al tram", tTotalSub: (n) => `de ${n} dies amb dades`,
@@ -152,6 +157,8 @@ export const I18N = {
       dia_pluja: "Día de lluvia", pluja_forta: "Lluvia fuerte",
       pluja_torrencial: "Lluvia torrencial", intensa: "Lluvia intensa",
       molt_intensa: "Lluvia muy intensa",
+      wb_incomode: "Bulbo húmedo incómodo", wb_limitant: "Bulbo húmedo limitante",
+      wb_perillos: "Bulbo húmedo peligroso",
     },
     nom: "Castellano",
     codi: "es",
@@ -180,16 +187,19 @@ export const I18N = {
     auto: "automático",
 
     vars: {
-      tn: { nom: "Temperatura mínima", curt: "mínima", nit: true },
-      tx: { nom: "Temperatura máxima", curt: "máxima", nit: false },
-      pp: { nom: "Precipitación diaria", curt: "lluvia", nit: false },
-      pi: { nom: "Intensidad de lluvia (máx. en 1 h)", curt: "intensidad", nit: false },
-      tm: { nom: "Temperatura media", curt: "temperatura", nit: false },
-      hr: { nom: "Humedad relativa", curt: "humedad", nit: false },
+      tn: { nom: "Temperatura mínima", curt: "mínima", nit: true, gen: "f" },
+      tx: { nom: "Temperatura máxima", curt: "máxima", nit: false, gen: "f" },
+      pp: { nom: "Precipitación diaria", curt: "lluvia", nit: false, gen: "f" },
+      pi: { nom: "Intensidad de lluvia (máx. en 1 h)", curt: "intensidad", nit: false, gen: "f" },
+      tm: { nom: "Temperatura media", curt: "temperatura", nit: false, gen: "f" },
+      hr: { nom: "Humedad relativa", curt: "humedad", nit: false, gen: "f" },
+      wb: { nom: "Bulbo húmedo (pico del día)", curt: "bulbo húmedo", nit: false, gen: "m" },
     },
     nit: "noches", dia: "días", any: "año",
     // Titol del segon panell segons com s'agrega la variable.
-    resum: { mean: "media", sum: "total", max: "máxima" },
+    resum: { mean: { m: "medio", f: "media" }, sum: { m: "total", f: "total" },
+             max: { m: "máximo", f: "máxima" } },
+    art: { m: "El", f: "La" },
     secs: (pct) => `El ${pct} % de los días no llueve: el histograma solo muestra los días con lluvia.`,
 
     seasons: {
@@ -219,7 +229,7 @@ export const I18N = {
     sentence: (d) =>
       `En <em>${d.estacio}</em>, ${d.unitat} con ${d.varCurt} ${d.cond} ${d.frase} han pasado ` +
       `de <em>${d.a}</em> a <em>${d.b}</em> de media anual: ${d.verb}. ` +
-      `La ${d.varCurt} del período pasa de ${d.m0} a ${d.m1} (${d.dm}).`,
+      `${d.art} ${d.varCurt} del período pasa de ${d.m0} a ${d.m1} (${d.dm}).`,
     verbUp: "ha subido", verbDown: "ha bajado", verbFlat: "se ha mantenido",
 
     tTotal: "Total en el tramo", tTotalSub: (n) => `de ${n} días con datos`,
@@ -274,6 +284,8 @@ export const I18N = {
       dia_pluja: "Rain day", pluja_forta: "Heavy rain",
       pluja_torrencial: "Torrential rain", intensa: "Intense rain",
       molt_intensa: "Very intense rain",
+      wb_incomode: "Uncomfortable wet-bulb", wb_limitant: "Limiting wet-bulb",
+      wb_perillos: "Dangerous wet-bulb",
     },
     nom: "English",
     codi: "en",
@@ -300,15 +312,18 @@ export const I18N = {
     auto: "automatic",
 
     vars: {
-      tn: { nom: "Minimum temperature", curt: "minimum", nit: true },
-      tx: { nom: "Maximum temperature", curt: "maximum", nit: false },
-      pp: { nom: "Daily rainfall", curt: "rainfall", nit: false },
-      pi: { nom: "Rain intensity (max in 1 h)", curt: "intensity", nit: false },
-      tm: { nom: "Mean temperature", curt: "temperature", nit: false },
-      hr: { nom: "Relative humidity", curt: "humidity", nit: false },
+      tn: { nom: "Minimum temperature", curt: "minimum", nit: true, gen: "f" },
+      tx: { nom: "Maximum temperature", curt: "maximum", nit: false, gen: "f" },
+      pp: { nom: "Daily rainfall", curt: "rainfall", nit: false, gen: "f" },
+      pi: { nom: "Rain intensity (max in 1 h)", curt: "intensity", nit: false, gen: "f" },
+      tm: { nom: "Mean temperature", curt: "temperature", nit: false, gen: "f" },
+      hr: { nom: "Relative humidity", curt: "humidity", nit: false, gen: "f" },
+      wb: { nom: "Wet-bulb (daily peak)", curt: "wet-bulb", nit: false, gen: "m" },
     },
     nit: "nights", dia: "days", any: "year",
-    resum: { mean: "mean", sum: "total", max: "peak" },
+    resum: { mean: { m: "mean", f: "mean" }, sum: { m: "total", f: "total" },
+             max: { m: "peak", f: "peak" } },
+    art: { m: "The", f: "The" },
     secs: (pct) => `${pct} % of days have no rain: the histogram only shows rainy days.`,
 
     seasons: {

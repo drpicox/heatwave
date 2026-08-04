@@ -73,6 +73,47 @@ variable `1303` publica la precipitació màxima registrada en una hora de cada
 dia, amb la mateixa cobertura que el total diari i des del 1988, de manera que es
 pot preguntar directament quants dies l'any superen una intensitat determinada.
 
+### Temperatura de bulb humit
+
+És la temperatura que marcaria un termòmetre embolicat amb un drap moll. Importa
+perquè és el límit al qual el cos es pot refredar suant: si el bulb humit ambient
+puja prou, suar deixa de servir. Per damunt de **26 °C** ja és incòmode per a qui
+treballa a fora, cap a **28 °C** limita l'activitat física, i a partir de **31 °C**
+és perillós fins i tot en repòs.
+
+Es calcula amb la fórmula de **Stull (2011)** a partir de temperatura i humitat
+relativa. És una aproximació empírica vàlida per a humitats del 5 al 99 % i
+temperatures de −20 a 50 °C; l'alternativa exacta demana resoldre una equació
+implícita i no aporta res a aquesta escala.
+
+**Es calcula des de les dades semihoràries, no des dels resums diaris**, i això
+no és perfeccionisme. El bulb humit depèn de la temperatura i la humitat *al
+mateix instant*, i el que interessa és la punta del dia. Vam mesurar les tres
+maneres d'estimar-lo amb dades diàries contra la veritat d'un estiu sencer de
+Badalona (120 dies):
+
+| mètode | biaix | error mitjà | pitjor cas |
+|---|---|---|---|
+| Tw(T mitjana, HR mitjana) | −1,70 | 1,70 | 4,65 °C |
+| Tw(T màxima, HR mínima) | −1,96 | 1,96 | 6,56 °C |
+| Tw(T màxima, rosada de la mitjana) | −0,76 | 0,79 | 4,13 °C |
+
+El millor subestima 0,8 °C de mitjana. Per a una mètrica que existeix per comptar
+dies per damunt d'un llindar, això desplaça el recompte sencer, així que es
+descarta.
+
+Dues limitacions que cal conèixer:
+
+- **La sèrie arrenca el 2009**, no el 1988: el registre semihorari no va més
+  enrere. És la meitat d'històric que la temperatura.
+- **Només hi ha dades de maig a octubre.** No és una retallada: s'ha comprovat
+  que en tot l'històric i totes les estacions no hi ha ni un sol dia amb bulb
+  humit estimat ≥ 24 °C fora d'aquests mesos, i que el percentil 99,9 de l'abril
+  es queda a 19,2 °C. Els recomptes anuals són, doncs, complets.
+
+Un dia només compta si té almenys 36 de les 48 lectures semihoràries: amb quatre
+lectures no se sap quina va ser la punta.
+
 ### Amplitud tèrmica
 
 La variable `1004` de la XEMA (amplitud tèrmica diària) no es descarrega: s'ha

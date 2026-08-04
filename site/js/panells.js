@@ -43,6 +43,7 @@ export function dibuixaText(m) {
     sEl.innerHTML = t.sentence({
       estacio: escapa(ST.nom), unitat: unitat(), varCurt: t.vars[state.v].curt,
       cond: thrText(), frase: t.seasonPhrase[state.season],
+      art: t.art[t.vars[state.v].gen || "f"],
       a: nf(P[0].perAny, 1), b: nf(P[1].perAny, 1),
       verb: Math.abs(d) < 0.5 ? t.verbFlat : d > 0 ? t.verbUp : t.verbDown,
       m0: nf(P[0].mitjana, 1), m1: nf(P[1].mitjana, 1) + " " + unitatVar(), dm: signed(dm, 1),
@@ -104,7 +105,8 @@ export function dibuixaText(m) {
   document.getElementById("s-count").textContent =
     t.sCount + (m.apilat ? " " + t.sCountStack : "");
   document.getElementById("t-mean").textContent =
-    t.pMean(majuscula(t.vars[state.v].curt) + " " + t.resum[varInfo().agg],
+    t.pMean(majuscula(t.vars[state.v].curt) + " " +
+              t.resum[varInfo().agg][t.vars[state.v].gen || "f"],
             t.seasonPhrase[state.season]);
   document.getElementById("s-mean").textContent = t.sMean;
   document.getElementById("t-heat").textContent = t.pHeat(u, thrText());

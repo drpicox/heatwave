@@ -164,8 +164,12 @@ def load(years: list[int] | None = None) -> tuple[pd.DataFrame, dict]:
     frames = {}
     dropped = {}
     blank = {}
-    for variable, short in config.VARIABLES.items():
+    curtes = list(config.VARIABLES.values()) + sorted(config.DERIVADES)
+    for short in curtes:
         paths = sorted(config.DAILY_CACHE.glob(f"{short}-*.parquet"))
+        # Una derivada pot no estar calculada encara: no es motiu per aturar-ho tot.
+        if not paths and short in config.DERIVADES:
+            continue
         if years is not None:
             keep = {str(y) for y in years}
             paths = [p for p in paths if p.stem.split("-")[-1] in keep]

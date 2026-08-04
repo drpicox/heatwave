@@ -324,7 +324,8 @@ def build_all(daily, stations, cov, estat_report, filter_report, source_updated,
     # gros i la pagina nomes el baixa quan obres el mapa; l'explorador d'estacio
     # no el toca. Per variable, perque nomes se'n mira una a la vegada.
     details = build_details(daily, cov, presets, stations, keep)
-    for short in config.VARIABLES.values():
+    # Les derivades tambe: el bulb humit no es baixa, pero al mapa hi ha de ser.
+    for short in list(config.VARIABLES.values()) + sorted(config.DERIVADES):
         lo, hi = config.HIST_RANGE[short]
         sizes[f"map-{short}.json"] = _write(
             config.SITE_DATA / f"map-{short}.json",
