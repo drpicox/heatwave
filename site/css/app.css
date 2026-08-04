@@ -36,7 +36,7 @@
     color-scheme: dark;
     --plane:     #0e1214;
     --surface:   #171c1f;
-    --surface-2: #1e2427;
+    --surface-2: #22292d;
     --ink:       #f1f4f3;
     --ink-2:     #a8b3b6;
     --muted:     #7d8890;
@@ -132,19 +132,34 @@ body {
   position: sticky;
   top: 14px;
   z-index: 3;
-  max-height: 58vh;
-  display: flex;
-  flex-direction: column;
   padding-bottom: 10px;
 }
 .panel-mapa .panel-head { margin-bottom: 8px; }
-/* L'SVG s'ajusta a l'alcada disponible i manté la proporcio: amb width:100% i
-   height:100% es dibuixaria a la seva mida natural i sortiria del panell. */
+
+/* L'alcada del mapa es explicita i no un percentatge dins d'un contenidor
+   d'alcada automatica: aquella combinacio depen que el navegador resolgui una
+   referencia circular i en alguns col.lapsa a zero, de manera que el mapa
+   simplement no es veu. Amb una alcada concreta no hi ha res a resoldre. */
 .panel-mapa .chart {
-  flex: 1; min-height: 0;
+  height: 380px;
   display: flex; justify-content: center; align-items: center;
   overflow: hidden;
 }
+:root[data-map="s"] .panel-mapa .chart { height: 260px; }
+:root[data-map="l"] .panel-mapa .chart { height: 640px; }
+
+/* A mida gran deixa d'enganxar-se: ompliria la finestra i taparia la resta. */
+:root[data-map="l"] .panel-mapa { position: static; }
+
+.mida { display: flex; gap: 2px; }
+.mida button {
+  font: inherit; font-size: 11px; font-family: var(--mono);
+  color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--hair); border-radius: 3px;
+  padding: 2px 8px; cursor: pointer; line-height: 1.5;
+}
+.mida button:hover { color: var(--ink); }
+.mida button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 .panel-mapa #c-mapa svg { height: 100%; width: auto; max-width: 100%; overflow: hidden; }
 
 @media (max-width: 1080px) {
@@ -387,6 +402,7 @@ input[type="range"]:disabled { opacity: .4; cursor: not-allowed; }
 .tip b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .tip .ty { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--muted); display: block; }
 
+.cap-dreta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .scale-legend { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .scale-bar { width: 128px; height: 9px; border-radius: 2px; border: 1px solid var(--hair); }
 

@@ -104,6 +104,10 @@ export function sincronitza() {
     b.setAttribute("aria-pressed", String(
       p.var === state.v && (p.op === ">=" ? "ge" : "lt") === state.op && p.value === state.thr));
   }
+  document.documentElement.setAttribute("data-map", state.mapa);
+  for (const b of document.querySelectorAll("#map-size button")) {
+    b.setAttribute("aria-pressed", String(b.dataset.mida === state.mapa));
+  }
   for (const b of document.querySelectorAll("#lang-group button")) {
     b.setAttribute("aria-pressed", String(b.dataset.lang === state.lang));
   }
@@ -134,6 +138,7 @@ export function llegeixHash() {
   if (p.get("v") && META.variables[p.get("v")]) state.v = p.get("v");
   if (p.get("op")) state.op = p.get("op") === "lt" ? "lt" : "ge";
   if (p.get("thr")) state.thr = +p.get("thr");
+  if (["s", "m", "l"].includes(p.get("mapa"))) state.mapa = p.get("mapa");
   if (p.get("season") && SEASONS[p.get("season")]) state.season = p.get("season");
   if (p.get("y")) {
     const [a, b] = p.get("y").split("-").map(Number);
@@ -146,6 +151,7 @@ export function escriuHash() {
   const p = new URLSearchParams({
     st: state.st, v: state.v, op: state.op, thr: String(state.thr),
     season: state.season, y: `${state.y0}-${state.y1}`, lang: state.lang,
+    mapa: state.mapa,
   });
   if (state.split != null) p.set("split", String(state.split));
   history.replaceState(null, "", "#" + p.toString());
@@ -209,6 +215,17 @@ export function initControls(render, carregaEstacio) {
     textosFixos();
     render();
   });
+
+  const ms = document.getElementById("map-size");
+  buida(ms);
+  for (const [k, etiqueta] of [["s", "S"], ["m", "M"], ["l", "L"]]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.mida = k;
+    b.textContent = etiqueta;
+    b.addEventListener("click", () => { state.mapa = k; redibuixa(); });
+    ms.append(b);
+  }
 
   const lg = document.getElementById("lang-group");
   for (const [k, v] of Object.entries(I18N)) {

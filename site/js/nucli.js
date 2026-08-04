@@ -24,6 +24,7 @@ export const state = {
   season: "any",
   y0: null, y1: null,
   split: null,   // null = automàtic (la meitat de la sèrie)
+  mapa: "m",     // mida del mapa: "s" | "m" | "l"
 };
 
 /* Dades carregades. S'assignen des de dades.js i tothom qui les importi veu
