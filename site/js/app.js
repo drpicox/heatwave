@@ -63,6 +63,7 @@ function render() {
  *  acaba de triar allà i perdre-li el lloc seria hostil. */
 async function triaDelMapa(codi) {
   state.st = codi;
+  state.vista = "estacio";
   state.y0 = state.y1 = null;
   await carregaEstacio(codi);
   render();

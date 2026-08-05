@@ -128,33 +128,38 @@ body {
 /* El panell enganxat ha de deixar veure el que hi ha a sota: si ocupa tota la
    finestra, els grafics de l'estacio no es veuen mai i el fet d'enganxar-lo
    perd el sentit. */
-/* El mapa a l'esquerra amb la seva amplada natural, i al costat els numeros de
-   l'estacio. Aixi les franges que deixava Catalunya per ser quadrada les ocupa
-   el que el lector acaba de demanar clicant-hi. */
+/* Dues vistes. El mapa necessita la pantalla per a ell: barrejat amb els
+   grafics d'una estacio quedava condemnat a ser petit. A la seva vista ocupa
+   l'espai que li cal i al costat hi van els numeros del conjunt, no els d'una
+   estacio. */
+:root[data-vista="mapa"] .nomes-estacio,
+:root:not([data-vista="mapa"]) .nomes-mapa { display: none; }
+
 .bloc-mapa {
-  position: sticky;
-  top: 14px;
-  z-index: 3;
   display: grid;
-  /* L'amplada del panell del mapa va lligada a la seva mida i no al text: amb
-     `auto`, el titol i el subtitol l'estiraven i tornava a sobrar espai. */
-  grid-template-columns: 470px minmax(260px, 1fr);
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 18px;
   align-items: stretch;
 }
-:root[data-map="s"] .bloc-mapa { grid-template-columns: 340px minmax(260px, 1fr); }
-:root[data-map="l"] .bloc-mapa { grid-template-columns: 720px minmax(260px, 1fr); }
 .costat { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.costat .readout { flex: 1; grid-template-columns: 1fr; align-content: center; }
-.costat .tiles { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
-.costat .tile { padding: 9px 11px; }
-.costat .tile .v { font-size: 17px; }
-.costat .hero-fig { font-size: clamp(40px, 5vw, 56px); }
 
 .panel-mapa { padding-bottom: 10px; }
 
-@media (max-width: 1240px) {
-  .bloc-mapa { grid-template-columns: 1fr; position: static; }
+.global { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.global h2 { font-family: var(--display); font-size: 16px; margin: 0; }
+.global .g-fig { font-size: clamp(30px, 3.4vw, 40px); font-weight: 650; line-height: 1; letter-spacing: -.02em; }
+.global .g-fig .u { font-size: .34em; font-weight: 500; color: var(--ink-2); margin-left: 5px; }
+.global .g-k { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.global .g-fila { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; border-top: 1px solid var(--hair); padding-top: 7px; }
+.global .g-fila b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.global ol { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.global li { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+.global li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.global li b { font-variant-numeric: tabular-nums; font-weight: 600; flex: none; }
+.global li.jo span, .global li.jo b { color: var(--accent); }
+
+@media (max-width: 1080px) {
+  .bloc-mapa { grid-template-columns: 1fr; }
 }
 .panel-mapa .panel-head { margin-bottom: 8px; }
 
@@ -163,15 +168,14 @@ body {
    referencia circular i en alguns col.lapsa a zero, de manera que el mapa
    simplement no es veu. Amb una alcada concreta no hi ha res a resoldre. */
 .panel-mapa .chart {
-  height: 380px;
+  height: clamp(420px, 68vh, 780px);
   display: flex; justify-content: center; align-items: center;
   overflow: hidden;
 }
-:root[data-map="s"] .panel-mapa .chart { height: 260px; }
-:root[data-map="l"] .panel-mapa .chart { height: 640px; }
+:root[data-map="s"] .panel-mapa .chart { height: clamp(300px, 46vh, 460px); }
+:root[data-map="l"] .panel-mapa .chart { height: clamp(560px, 88vh, 1000px); }
 
 /* A mida gran deixa d'enganxar-se: ompliria la finestra i taparia la resta. */
-:root[data-map="l"] .bloc-mapa { position: static; }
 
 .mida { display: flex; gap: 2px; }
 .mida button {

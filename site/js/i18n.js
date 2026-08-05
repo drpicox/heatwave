@@ -125,6 +125,11 @@ export const I18N = {
     saltMean: (a, b, d) => ` El salt: de ${a} a ${b} (${d}).`,
 
     lView: "Vista", vistaEstacio: "Estació", vistaMapa: "Mapa",
+    gTitol: "El conjunt de Catalunya",
+    gMediana: "Mediana entre estacions", gMax: "On més", gMin: "On menys",
+    gEst: "Estacions comptades", gRang: "Meitat central",
+    gRanking: "Les deu primeres",
+    gCap: "Cap estació té prou anys complets per a aquesta consulta.",
     carregant: "Carregant el mapa…",
     pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} amb ${cond} a tot Catalunya`,
     sMapa: (n) =>
@@ -250,6 +255,11 @@ export const I18N = {
     saltMean: (a, b, d) => ` El salto: de ${a} a ${b} (${d}).`,
 
     lView: "Vista", vistaEstacio: "Estación", vistaMapa: "Mapa",
+    gTitol: "El conjunto de Cataluña",
+    gMediana: "Mediana entre estaciones", gMax: "Dónde más", gMin: "Dónde menos",
+    gEst: "Estaciones contadas", gRang: "Mitad central",
+    gRanking: "Las diez primeras",
+    gCap: "Ninguna estación tiene suficientes años completos para esta consulta.",
     carregant: "Cargando el mapa…",
     pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} con ${cond} en toda Cataluña`,
     sMapa: (n) =>
@@ -371,6 +381,11 @@ export const I18N = {
     saltMean: (a, b, d) => ` The change: from ${a} to ${b} (${d}).`,
 
     lView: "View", vistaEstacio: "Station", vistaMapa: "Map",
+    gTitol: "Catalonia as a whole",
+    gMediana: "Median across stations", gMax: "Highest", gMin: "Lowest",
+    gEst: "Stations counted", gRang: "Middle half",
+    gRanking: "Top ten",
+    gCap: "No station has enough complete years for this query.",
     carregant: "Loading the map…",
     pMapa: (u, cond) => `${u.charAt(0).toUpperCase() + u.slice(1)} with ${cond} across Catalonia`,
     sMapa: (n) =>

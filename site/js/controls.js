@@ -44,7 +44,7 @@ export function textosFixos() {
   document.getElementById("x-h1").textContent = t.h1;
   document.getElementById("x-lede").textContent = t.lede(nf(INDEX.length));
   const set = (id, v) => { document.getElementById(id).textContent = v; };
-  set("x-l-station", t.lStation); set("x-l-var", t.lVar); set("x-l-op", t.lOp);
+  set("x-l-view", t.lView); set("x-l-station", t.lStation); set("x-l-var", t.lVar); set("x-l-op", t.lOp);
   set("x-l-thr", t.lThr); set("x-l-season", t.lSeason); set("x-l-years", t.lYears);
   set("x-l-split", t.lSplit); set("x-l-presets", t.lPresets);
   set("thr-help", t.hThr); set("x-h-years", t.hYears); set("x-h-split", t.hSplit);
@@ -105,6 +105,11 @@ export function sincronitza() {
       p.var === state.v && (p.op === ">=" ? "ge" : "lt") === state.op && p.value === state.thr));
   }
   document.documentElement.setAttribute("data-map", state.mapa);
+  document.documentElement.setAttribute("data-vista", state.vista);
+  for (const b of document.querySelectorAll("#view-group button")) {
+    b.textContent = b.dataset.vista === "mapa" ? t.vistaMapa : t.vistaEstacio;
+    b.setAttribute("aria-pressed", String(b.dataset.vista === state.vista));
+  }
   for (const b of document.querySelectorAll("#map-size button")) {
     b.setAttribute("aria-pressed", String(b.dataset.mida === state.mapa));
   }
@@ -139,6 +144,7 @@ export function llegeixHash() {
   if (p.get("op")) state.op = p.get("op") === "lt" ? "lt" : "ge";
   if (p.get("thr")) state.thr = +p.get("thr");
   if (["s", "m", "l"].includes(p.get("mapa"))) state.mapa = p.get("mapa");
+  if (["mapa", "estacio"].includes(p.get("vista"))) state.vista = p.get("vista");
   if (p.get("season") && SEASONS[p.get("season")]) state.season = p.get("season");
   if (p.get("y")) {
     const [a, b] = p.get("y").split("-").map(Number);
@@ -151,7 +157,7 @@ export function escriuHash() {
   const p = new URLSearchParams({
     st: state.st, v: state.v, op: state.op, thr: String(state.thr),
     season: state.season, y: `${state.y0}-${state.y1}`, lang: state.lang,
-    mapa: state.mapa,
+    mapa: state.mapa, vista: state.vista,
   });
   if (state.split != null) p.set("split", String(state.split));
   history.replaceState(null, "", "#" + p.toString());
@@ -215,6 +221,16 @@ export function initControls(render, carregaEstacio) {
     textosFixos();
     render();
   });
+
+  const vg = document.getElementById("view-group");
+  buida(vg);
+  for (const v of ["mapa", "estacio"]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.vista = v;
+    b.addEventListener("click", () => { state.vista = v; redibuixa(); });
+    vg.append(b);
+  }
 
   const ms = document.getElementById("map-size");
   buida(ms);

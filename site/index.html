@@ -24,6 +24,11 @@
        responen tots a la mateixa consulta. -->
   <aside class="panell-controls" aria-label="Paràmetres">
     <div class="field">
+      <span class="lbl" id="x-l-view"></span>
+      <div class="seg" role="group" id="view-group" aria-labelledby="x-l-view"></div>
+    </div>
+
+    <div class="field nomes-estacio">
       <label for="f-station" id="x-l-station"></label>
       <select id="f-station"></select>
     </div>
@@ -94,7 +99,7 @@
 
     <!-- El mapa i els numeros de l'estacio comparteixen bloc: Catalunya es
          gairebe quadrada i deixaria dues franges buides al costat. -->
-    <div class="bloc-mapa" id="panel-mapa">
+    <div class="bloc-mapa nomes-mapa" id="panel-mapa">
     <section class="panel panel-mapa">
       <div class="panel-head">
         <div><h2 id="t-mapa"></h2><p class="sub" id="s-mapa"></p></div>
@@ -107,6 +112,11 @@
     </section>
 
     <div class="costat">
+      <section class="panel global" id="global"></section>
+    </div>
+    </div>
+
+    <div class="nomes-estacio">
       <section class="readout" aria-live="polite">
         <div>
           <div class="hero-fig" id="hero-fig"></div>
@@ -117,9 +127,8 @@
       </section>
       <section class="tiles" id="tiles"></section>
     </div>
-    </div>
 
-    <section class="panel">
+    <section class="panel nomes-estacio">
       <div class="panel-head">
         <div><h2 id="t-count"></h2><p class="sub" id="s-count"></p></div>
         <div class="legend" id="l-count"></div>
@@ -127,7 +136,7 @@
       <div class="chart" id="c-count"><svg></svg><div class="tip"></div></div>
     </section>
 
-    <section class="panel">
+    <section class="panel nomes-estacio">
       <div class="panel-head">
         <div><h2 id="t-mean"></h2><p class="sub" id="s-mean"></p></div>
         <div class="legend" id="l-mean"></div>
@@ -135,7 +144,7 @@
       <div class="chart" id="c-mean"><svg></svg><div class="tip"></div></div>
     </section>
 
-    <section class="panel">
+    <section class="panel nomes-estacio">
       <div class="panel-head">
         <div><h2 id="t-heat"></h2><p class="sub" id="s-heat"></p></div>
         <div class="scale-legend" id="l-heat"></div>
@@ -143,7 +152,7 @@
       <div class="chart" id="c-heat"><svg></svg><div class="tip"></div></div>
     </section>
 
-    <details class="tableview">
+    <details class="tableview nomes-estacio">
       <summary id="x-table-summary"></summary>
       <div class="table-body"><div class="tscroll"><table id="tabla">
         <thead><tr id="t-head"></tr></thead><tbody></tbody>

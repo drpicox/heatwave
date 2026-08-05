@@ -159,6 +159,8 @@ export function dibuixa(onTria) {
     svg.append(hit);
   }
 
+  dibuixaGlobal(punts);
+
   document.getElementById("t-mapa").textContent = L().pMapa(unitat(), thrText());
   document.getElementById("s-mapa").textContent =
     L().sMapa(punts.length) + (fora.size ? " " + L().sMapaFora(fora.size, MIN_ANYS) : "");
@@ -171,4 +173,77 @@ export function dibuixa(onTria) {
     "linear-gradient(to right, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--accent))";
   leg.append(document.createTextNode("0"), bar,
     document.createTextNode(`${nf(max, 1)} ${unitat()}/${L().any}`));
+}
+
+
+/** Els numeros del conjunt, al costat del mapa.
+ *
+ *  A la vista de mapa la pregunta ja no es "que passa a la meva estacio" sino
+ *  "com esta Catalunya", i per tant aqui no hi van els numeros d'una estacio
+ *  sino la mediana entre totes, els extrems i qui encapcala.
+ */
+function dibuixaGlobal(punts) {
+  const host = document.getElementById("global");
+  buida(host);
+  const t = L();
+
+  const h2 = document.createElement("h2");
+  h2.textContent = t.gTitol;
+  host.append(h2);
+
+  if (!punts.length) {
+    const p = document.createElement("p");
+    p.className = "sub";
+    p.textContent = t.gCap;
+    host.append(p);
+    return;
+  }
+
+  const vals = punts.map((p) => p.valor).sort((a, b) => a - b);
+  const q = (f) => vals[Math.min(vals.length - 1, Math.floor(vals.length * f))];
+  const mediana = vals.length % 2
+    ? vals[(vals.length - 1) / 2]
+    : (vals[vals.length / 2 - 1] + vals[vals.length / 2]) / 2;
+
+  const fig = document.createElement("div");
+  fig.className = "g-fig";
+  fig.append(document.createTextNode(nf(mediana, 1)));
+  const u = document.createElement("span");
+  u.className = "u";
+  u.textContent = `${unitat()}/${t.any}`;
+  fig.append(u);
+  const k = document.createElement("div");
+  k.className = "g-k";
+  k.textContent = t.gMediana;
+  host.append(fig, k);
+
+  const fila = (etiqueta, valor) => {
+    const d = document.createElement("div");
+    d.className = "g-fila";
+    const a = document.createElement("span");
+    a.textContent = etiqueta;
+    const b = document.createElement("b");
+    b.textContent = valor;
+    d.append(a, b);
+    return d;
+  };
+  host.append(fila(t.gRang, `${nf(q(0.25), 1)} – ${nf(q(0.75), 1)}`));
+  host.append(fila(t.gEst, nf(punts.length)));
+
+  const ordenats = [...punts].sort((a, b) => b.valor - a.valor);
+  const kr = document.createElement("div");
+  kr.className = "g-k";
+  kr.textContent = t.gRanking;
+  const ol = document.createElement("ol");
+  for (const p of ordenats.slice(0, 10)) {
+    const li = document.createElement("li");
+    if (p.codi === state.st) li.className = "jo";
+    const n = document.createElement("span");
+    n.textContent = p.s.nom;
+    const v = document.createElement("b");
+    v.textContent = nf(p.valor, 1);
+    li.append(n, v);
+    ol.append(li);
+  }
+  host.append(kr, ol);
 }
