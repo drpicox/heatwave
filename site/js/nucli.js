@@ -67,13 +67,28 @@ export function el(tag, attrs = {}, text) {
 
 export const buida = (n) => { while (n.firstChild) n.removeChild(n.firstChild); };
 
-export function ticks(lo, hi, n = 4) {
+/** Marques d'eix rodones.
+ *
+ *  `enters` obliga el pas a ser com a mínim 1: un eix que compta dies no pot
+ *  tenir marques a 0,25, perquè en arrodonir-les a zero decimals sortien
+ *  etiquetes repetides (0, 0, 1, 1, 1) en una sèrie que arriba a 1.
+ */
+export function ticks(lo, hi, n = 4, enters = false) {
   const cru = (hi - lo) / n || 1;
   const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(cru))));
-  const pas = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((p) => p >= cru) || mag * 10;
+  let pas = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((p) => p >= cru) || mag * 10;
+  if (enters) pas = Math.max(1, Math.round(pas));
   const out = [];
   for (let v = Math.ceil(lo / pas) * pas; v <= hi + 1e-9; v += pas) out.push(+v.toFixed(6));
   return out;
+}
+
+/** Decimals que calen perquè dues marques consecutives no surtin iguals. */
+export function decimalsDe(valors) {
+  if (valors.length < 2) return 1;
+  const pas = Math.abs(valors[1] - valors[0]);
+  if (!pas) return 1;
+  return Math.min(3, Math.max(0, Math.ceil(-Math.log10(pas))));
 }
 
 /* --- histogrames ---------------------------------------------------------- */

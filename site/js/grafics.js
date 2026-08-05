@@ -3,7 +3,7 @@
  * SVG a ma. Cada funcio rep el model ja calculat i nomes s'ocupa de pintar-lo.
  */
 
-import { state, ST, L, nf, signed, unitat, el, buida, ticks,
+import { state, ST, L, nf, signed, unitat, el, buida, ticks, decimalsDe,
          varInfo, unitatVar } from "./nucli.js";
 
 export function mostraTip(host, x, y, nodes) {
@@ -115,10 +115,10 @@ export function dibuixaCount(m) {
 
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
 
-  for (const t of ticks(0, max, 4)) {
-    svg.append(el("line", { x1: mg.l, x2: mg.l + iw, y1: Y(t), y2: Y(t), stroke: "var(--grid)", "stroke-width": 1 }));
-    svg.append(el("text", { x: mg.l - 9, y: Y(t) + 4, "text-anchor": "end",
-      fill: "var(--muted)", "font-size": 11 }, nf(t)));
+  for (const v of ticks(0, max, 4, true)) {
+    svg.append(el("line", { x1: mg.l, x2: mg.l + iw, y1: Y(v), y2: Y(v), stroke: "var(--grid)", "stroke-width": 1 }));
+    svg.append(el("text", { x: mg.l - 9, y: Y(v) + 4, "text-anchor": "end",
+      fill: "var(--muted)", "font-size": 11 }, nf(v)));
   }
 
   m.files.forEach((f, i) => {
@@ -227,10 +227,12 @@ export function dibuixaMean(m) {
   const X = (any) => mg.l + m.files.findIndex((f) => f.any === any) * banda + banda / 2;
 
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  for (const t of ticks(lo - marge, hi + marge, 4)) {
-    svg.append(el("line", { x1: mg.l, x2: mg.l + iw, y1: Y(t), y2: Y(t), stroke: "var(--grid)", "stroke-width": 1 }));
-    svg.append(el("text", { x: mg.l - 9, y: Y(t) + 4, "text-anchor": "end",
-      fill: "var(--muted)", "font-size": 11 }, nf(t, 1)));
+  const marques = ticks(lo - marge, hi + marge, 4);
+  const dec = decimalsDe(marques);
+  for (const v of marques) {
+    svg.append(el("line", { x1: mg.l, x2: mg.l + iw, y1: Y(v), y2: Y(v), stroke: "var(--grid)", "stroke-width": 1 }));
+    svg.append(el("text", { x: mg.l - 9, y: Y(v) + 4, "text-anchor": "end",
+      fill: "var(--muted)", "font-size": 11 }, nf(v, dec)));
   }
 
   // Una mitjana d'un tram a mitges no és un valor baix, és un altre estadístic:

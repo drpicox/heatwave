@@ -28,7 +28,10 @@ export function dibuixaText(m) {
   buida(dEl);
   if (P) {
     const d = P[1].perAny - P[0].perAny;
-    dEl.append(document.createTextNode((d > 0 ? "▲" : d < 0 ? "▼" : "▬") + " "));
+    // La fletxa mira el valor JA ARRODONIT: si no, un salt de 0,02 dibuixava
+    // una fletxa amunt al costat d'un "+0,0" i el rètol es contradeia sol.
+    const vist = Math.round(d * 10) / 10;
+    dEl.append(document.createTextNode((vist > 0 ? "▲" : vist < 0 ? "▼" : "▬") + " "));
     dEl.append(linia(`${signed(d, 1)} ${unitat()}/${t.any}`, true));
     dEl.append(document.createTextNode(` ${t.deltaVs} ${P[0].etiqueta} (`));
     dEl.append(linia(nf(P[0].perAny, 1), true));
