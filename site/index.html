@@ -92,8 +92,10 @@
 
   <main class="columna">
 
-    <!-- El mapa es queda enganxat a dalt mentre els panells passen per sota. -->
-    <section class="panel panel-mapa" id="panel-mapa">
+    <!-- El mapa i els numeros de l'estacio comparteixen bloc: Catalunya es
+         gairebe quadrada i deixaria dues franges buides al costat. -->
+    <div class="bloc-mapa" id="panel-mapa">
+    <section class="panel panel-mapa">
       <div class="panel-head">
         <div><h2 id="t-mapa"></h2><p class="sub" id="s-mapa"></p></div>
         <div class="cap-dreta">
@@ -104,16 +106,18 @@
       <div class="chart" id="c-mapa"><svg></svg><div class="tip"></div></div>
     </section>
 
-    <section class="readout" aria-live="polite">
-      <div>
-        <div class="hero-fig" id="hero-fig"></div>
-        <div class="hero-cap" id="hero-cap"></div>
-        <div class="hero-delta" id="hero-delta"></div>
-      </div>
-      <p class="sentence" id="sentence"></p>
-    </section>
-
-    <section class="tiles" id="tiles"></section>
+    <div class="costat">
+      <section class="readout" aria-live="polite">
+        <div>
+          <div class="hero-fig" id="hero-fig"></div>
+          <div class="hero-cap" id="hero-cap"></div>
+          <div class="hero-delta" id="hero-delta"></div>
+        </div>
+        <p class="sentence" id="sentence"></p>
+      </section>
+      <section class="tiles" id="tiles"></section>
+    </div>
+    </div>
 
     <section class="panel">
       <div class="panel-head">

@@ -128,11 +128,33 @@ body {
 /* El panell enganxat ha de deixar veure el que hi ha a sota: si ocupa tota la
    finestra, els grafics de l'estacio no es veuen mai i el fet d'enganxar-lo
    perd el sentit. */
-.panel-mapa {
+/* El mapa a l'esquerra amb la seva amplada natural, i al costat els numeros de
+   l'estacio. Aixi les franges que deixava Catalunya per ser quadrada les ocupa
+   el que el lector acaba de demanar clicant-hi. */
+.bloc-mapa {
   position: sticky;
   top: 14px;
   z-index: 3;
-  padding-bottom: 10px;
+  display: grid;
+  /* L'amplada del panell del mapa va lligada a la seva mida i no al text: amb
+     `auto`, el titol i el subtitol l'estiraven i tornava a sobrar espai. */
+  grid-template-columns: 470px minmax(260px, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+:root[data-map="s"] .bloc-mapa { grid-template-columns: 340px minmax(260px, 1fr); }
+:root[data-map="l"] .bloc-mapa { grid-template-columns: 720px minmax(260px, 1fr); }
+.costat { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.costat .readout { flex: 1; grid-template-columns: 1fr; align-content: center; }
+.costat .tiles { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+.costat .tile { padding: 9px 11px; }
+.costat .tile .v { font-size: 17px; }
+.costat .hero-fig { font-size: clamp(40px, 5vw, 56px); }
+
+.panel-mapa { padding-bottom: 10px; }
+
+@media (max-width: 1240px) {
+  .bloc-mapa { grid-template-columns: 1fr; position: static; }
 }
 .panel-mapa .panel-head { margin-bottom: 8px; }
 
@@ -149,7 +171,7 @@ body {
 :root[data-map="l"] .panel-mapa .chart { height: 640px; }
 
 /* A mida gran deixa d'enganxar-se: ompliria la finestra i taparia la resta. */
-:root[data-map="l"] .panel-mapa { position: static; }
+:root[data-map="l"] .bloc-mapa { position: static; }
 
 .mida { display: flex; gap: 2px; }
 .mida button {
