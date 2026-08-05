@@ -143,6 +143,10 @@ body {
 }
 .costat { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
+/* En embolcallar la lectura i les targetes per poder-les amagar juntes, van
+   deixar de ser filles directes de la columna i van perdre'n la separacio. */
+.bloc-estacio { display: flex; flex-direction: column; gap: 18px; }
+
 .panel-mapa { padding-bottom: 10px; }
 
 .global { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
