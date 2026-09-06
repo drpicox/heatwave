@@ -115,6 +115,14 @@ export const I18N = {
     sCountStack: "La part clara són els dies de la resta de l'any, fora de l'època seleccionada.",
     lPeriod: "mitjana del període", lRest: "resta de l'any", lPartial: "any incomplet",
 
+    // Franja de context. No explica la sèrie: hi va al costat.
+    ctxEnso: "ENSO",
+    ensoNino: "el Niño", ensoNina: "la Niña", ensoNeutre: "neutre",
+    ctxVolcans: (lo, hi) => `Aerosol volcànic estratosfèric · ${lo}–${hi}° N`,
+    ctxVolcansCurt: "Aerosol",
+    ctxCopsFons: (x) => `${x}× el fons`,
+    ctxSenseDada: "sense dada",
+
     pMean: (v, frase) => `${v} ${frase}, any per any`,
     sMean: "Els anys sense prou dades s'ometen: una mitjana d'un tram a mitges no és comparable.",
 
@@ -246,6 +254,13 @@ export const I18N = {
     sCountStack: "La parte clara son los días del resto del año, fuera de la época seleccionada.",
     lPeriod: "media del período", lRest: "resto del año", lPartial: "año incompleto",
 
+    ctxEnso: "ENSO",
+    ensoNino: "el Niño", ensoNina: "la Niña", ensoNeutre: "neutro",
+    ctxVolcans: (lo, hi) => `Aerosol volcánico estratosférico · ${lo}–${hi}° N`,
+    ctxVolcansCurt: "Aerosol",
+    ctxCopsFons: (x) => `${x}× el fondo`,
+    ctxSenseDada: "sin dato",
+
     pMean: (v, frase) => `${v} ${frase}, año por año`,
     sMean: "Los años sin suficientes datos se omiten: una media de un tramo a medias no es comparable.",
 
@@ -373,6 +388,13 @@ export const I18N = {
     sCount: "Each bar is one year. The horizontal lines are each period's average.",
     sCountStack: "The lighter part is days from the rest of the year, outside the selected season.",
     lPeriod: "period average", lRest: "rest of the year", lPartial: "incomplete year",
+
+    ctxEnso: "ENSO",
+    ensoNino: "El Niño", ensoNina: "La Niña", ensoNeutre: "neutral",
+    ctxVolcans: (lo, hi) => `Stratospheric volcanic aerosol · ${lo}–${hi}° N`,
+    ctxVolcansCurt: "Aerosol",
+    ctxCopsFons: (x) => `${x}× background`,
+    ctxSenseDada: "no data",
 
     pMean: (v, frase) => `${v} ${frase}, year by year`,
     sMean: "Years without enough data are omitted: a mean over half a season is not comparable.",

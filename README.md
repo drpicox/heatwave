@@ -38,6 +38,14 @@ com ha canviat. Hi ha quatre variables — mínima, màxima, pluja diària i
 **intensitat de pluja** (màxima en una hora) — i una vista de mapa amb totes les
 estacions alhora.
 
+Sota el gràfic d'anys hi ha una franja de context amb **El Niño / la Niña** i
+l'**aerosol volcànic estratosfèric**, que són les dues coses que tothom pregunta
+davant d'una sèrie que puja. Hi són com a magnitud i no com a bandera, perquè la
+resposta mesurada és que no: l'ENSO no mou la mínima estival d'aquí ni la meitat
+del que la mou el soroll interanual, i l'únic volcà que compta en tota la sèrie
+és el Pinatubo, que va coincidir amb els anys en què la xarxa tenia nou
+estacions. Els números són a [docs/BACKLOG.md](docs/BACKLOG.md).
+
 El senyal climàtic de la pluja és més a la intensitat que al total. A
 Badalona-Museu, de 2006–2015 a 2016–2025, la pluja total baixa de 496,6 a
 471,1 mm i la punta d'intensitat anual puja de 25,7 a 26,6 mm/h: plou menys i cau

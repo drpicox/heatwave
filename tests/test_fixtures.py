@@ -313,3 +313,81 @@ def test_estacions_no_encadenades(daily):
     assert daily.groupby("codi_estacio").size().get("DH") != daily.groupby(
         "codi_estacio"
     ).size().get("WU")
+
+
+# --- franja de context ---------------------------------------------------------
+#
+# Valors verificats contra la font. L'ONI surt de
+# cpc.ncep.noaa.gov/data/indices/oni.ascii.txt (columna ANOM de la fila DJF) i el
+# SAOD de GloSSAC v2.24, ponderat per area entre 38 i 46 N.
+#
+# Compte: **la NOAA recalibra l'ONI**. El periode base son trenta anys centrats
+# que es refan cada cinc, aixi que un episodi antic canvia de valor sense que hi
+# hagi passat res de nou. La primera versio d'aquest test deia 1,71 per al 1992 i
+# 2,63 per al 2016, i eren certs quan es van escriure. Si tornen a fallar, mira
+# primer la capcalera del fitxer a la cache abans de buscar l'error al pipeline:
+# el mes calent dels dos episodis grans ha de continuar sent el del 1998 o el del
+# 2016, i les Ninyes del 2000 i el 2008 han de continuar sent negatives.
+
+ONI_DJF = {1998: 2.22, 2016: 2.50, 2000: -1.47, 2008: -1.76, 1992: 1.54}
+
+
+@pytest.mark.parametrize("year,expected", sorted(ONI_DJF.items()))
+def test_oni_djf(year, expected):
+    ctx = _published("context.json")
+    assert ctx["enso"][str(year)] == pytest.approx(expected, abs=0.005)
+
+
+def test_el_pinatubo_es_l_unic_event_de_la_finestra_de_la_xema():
+    """Dins la finestra de la XEMA, el 1992 destaca i la resta es plana.
+
+    Es el numero que sosté tot el que diu METODOLOGIA.md sobre els volcans: si
+    algun dia deixa de ser cert, o be el pipeline s'ha trencat o be ha passat
+    alguna cosa que cal explicar abans de publicar-la.
+
+    Compte amb la finestra. GloSSAC arrenca el 1979 i la XEMA el setembre del
+    1988, aixi que el fitxer porta tambe **El Chichon** (1982-84, 8,6x el fons),
+    que cap grafic no dibuixara mai perque no hi ha estacio amb dades d'aquells
+    anys. Es per aixo que el test compta des del 1988 i no des del principi del
+    fitxer: sense aquesta linia el test es limitaria a repetir l'error de llegir
+    la franja fora del rang on hi ha dades.
+    """
+    ctx = _published("context.json")
+    fons = ctx["saod_fons"]
+    saod = {y: v for y, v in ctx["saod"].items() if int(y) >= config.FIRST_YEAR}
+    assert max(saod, key=lambda y: saod[y]) == "1992"
+    assert saod["1992"] / fons > 10
+    # El Pinatubo triga quatre anys a marxar (1994 encara fa 2,3x el fons).
+    # Fora d'aquests, res de la serie no arriba a 2x.
+    pinatubo = ("1991", "1992", "1993", "1994")
+    assert min(saod[y] for y in pinatubo) / fons > 2
+    resta = [v for y, v in saod.items() if y not in pinatubo]
+    assert max(resta) / fons < 2
+
+
+def test_l_eyjafjallajokull_no_es_un_event_climatic():
+    """2010 va tancar l'espai aeri d'Europa i aqui no arriba ni a la mitjana.
+
+    El criteri no es el VEI sino el sofre que arriba a l'estratosfera. Aquest
+    test existeix perque es l'error que qualsevol faria en curar la llista a ma.
+    """
+    ctx = _published("context.json")
+    saod = ctx["saod"]
+    mitjana = sum(saod.values()) / len(saod)
+    assert saod["2010"] < mitjana
+
+
+def test_el_fillvalue_no_s_ha_colat():
+    """`_FillValue = 9999` amb escala 1e-4 dona 1,0: un apagat de sol total.
+
+    Es el parany del format, i sense emmascarar-lo no peta res: nomes surten
+    anys amb una profunditat optica impossible.
+    """
+    ctx = _published("context.json")
+    assert max(ctx["saod"].values()) < 0.5
+
+
+def test_la_banda_de_latitud_es_la_d_aqui():
+    ctx = _published("context.json")
+    lo, hi = ctx["lat_band"]
+    assert lo <= 41.5 <= hi, "Catalunya ha de caure dins la banda publicada"

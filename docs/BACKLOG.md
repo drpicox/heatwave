@@ -89,6 +89,133 @@ Creuar amb la temperatura superficial del Mediterrani (NOAA OISST o Copernicus
 Marine, totes dues obertes). Si un canvi coincideix amb el del mar, hi ha una
 explicació física i no només una correlació temporal.
 
+## El Niño, la Niña i els volcans
+
+**Estat: mesurat i publicat com a franja de context. L'ENSO no té senyal aquí i
+els volcans no tenen finestra. Cap filtre, i el motiu és a sota.**
+
+És la pregunta que fa tothom quan veu el web: no serà que els anys calents són
+anys del Niño, o que hi va haver un volcà. Val la pena tenir la resposta
+mesurada i no opinada, perquè totes dues intuïcions són raonables i totes dues
+fallen, però per motius diferents.
+
+### El Niño: el senyal és zero, i el signe depèn del conveni
+
+Índex ONI de la NOAA (`cpc.ncep.noaa.gov/data/indices/oni.ascii.txt`, 918
+línies, DJF 1950 endavant, domini públic). Composició de la **mínima mitjana de
+juny-agost** per fase, amb la mediana de xarxa de les estacions amb JJA complet
+a tota la finestra, i el mateix càlcul repetit sobre la sèrie sense la tendència
+de Theil-Sen:
+
+| finestra | estacions | Niño − Niña (cru) | (sense tendència) | σ interanual |
+|---|---|---|---|---|
+| 1996–2025 | 14 | +0,08 °C | −0,04 °C | 0,65 |
+| 2001–2025 | 57 | −0,09 °C | −0,10 °C | 0,68 |
+| 2006–2025 | 100 | −0,32 °C | −0,44 °C | 0,55 |
+
+Tot per sota de la variabilitat interanual. I pitjor: **el signe depèn del
+conveni de desfasament**, que és una decisió invisible per a qui mira el gràfic.
+A 2006–2025, classificant per l'ONI del DJF previ els estius de Niño surten
+0,44 °C **més freds**; classificant per l'ONI simultani de JJA, 0,28 °C **més
+calents**. Mateixes dades, mateixes estacions, signe oposat.
+
+Amb n ≈ 10 per grup i una tendència de +0,84 °C/dècada a la finestra curta, un
+recompte per fase mesura sobretot **quan van caure els events**, no l'ENSO. És
+la mateixa trampa que la secció de tendències de
+[METODOLOGIA.md](METODOLOGIA.md), amb una altra disfressa.
+
+Per Catalunya els índexs amb relació física no són l'ENSO sinó el **WeMO**
+(fet expressament per a la façana mediterrània, i on es veu és a la pluja de
+tardor), la **NAO** d'hivern i, per a la calor nocturna, la temperatura del mar
+—vegeu «Context marí» aquí sobre.
+
+### Volcans: el criteri no és el VEI
+
+La intuïció natural és cercar erupcions famoses, i porta a l'error. El
+**Eyjafjallajökull (2010)** va cancel·lar 107.000 vols i és el que tothom
+recorda, però la ploma es va quedar als 9 km, dins la troposfera: el seu efecte
+climàtic és indistingible de zero. El **Holuhraun (2014-15)**, la colada més
+gran d'Islàndia des del Laki, va emetre moltíssim SO₂ però efusiu i baix, i la
+pluja se'l va endur en setmanes.
+
+El que refreda és el sofre que arriba a l'**estratosfera** i s'hi queda, i això
+està mesurat: profunditat òptica de l'aerosol estratosfèric (SAOD), publicada
+per la NASA GISS a `data.giss.nasa.gov/modelforce/strataer/`. Cal llegir-la a la
+**banda de latitud d'aquí (43° N)**, no la mitjana global: l'aerosol no es
+reparteix per igual entre hemisferis.
+
+Valor anual a 43° N, dues reconstruccions independents, en múltiples del fons
+(fons ≈ 0,004 a CMIP7 i 0,006 a Sato-Lacis):
+
+| any | event | CMIP7 | Sato-Lacis |
+|---|---|---|---|
+| 1884 | Krakatoa | 18× | 21× |
+| 1912 | Novarupta-Katmai | 13× | 9× |
+| 1963–64 | Agung | 3× | 4× |
+| 1983 | El Chichón | 11× | 15× |
+| **1992** | **Pinatubo** | **21×** | **20×** |
+
+I d'aquí surt tot: **en 174 anys, el pic més gran d'aerosol estratosfèric sobre
+la nostra latitud és el del Pinatubo.** L'única erupció que valdria la pena
+marcar en tota l'era instrumental cau el quart any de la sèrie de la XEMA.
+Aquells estius la xarxa tenia **6 estacions amb JJA complet el 1991, 9 el 1992 i
+11 el 1993**. L'aerosol arriba aquí el juliol del 1991 i fa el màxim el febrer
+del 1992: l'estiu a mirar seria el del 1992, no el del 1991.
+
+L'Agung és la contraprova de per què cal la banda de latitud: globalment és un
+dels grans del segle XX i aquí no arriba ni a 4×, perquè va quedar a l'hemisferi
+sud. Amb la mitjana global algú conclouria que el 1963 aquí va passar alguna
+cosa.
+
+De l'era satèl·lit (GloSSAC v2.24, 1979–2025) no en surt res més: el
+Eyjafjallajökull dona 0,0046 a 43° N —per sota de la mitjana del propi
+registre—, el Grímsvötn i el Nabro del 2011 fan 0,0069, i el Hunga Tonga (2022)
+és el pic global més gran des del Pinatubo però a 43° N es queda a 0,0063,
+perquè va quedar atrapat als tròpics del sud. I el que va injectar era sobretot
+vapor d'aigua, l'efecte net del qual, si de cas, és d'escalfar.
+
+### Què s'ha fet, i què no
+
+Fet: una **franja de context** sota el gràfic d'anys, amb la magnitud any a any
+i no una marca de sí/no (`pipeline/events.py`, `site/data/context.json`, 2 KB).
+Dibuixa una ratlla gairebé plana amb un sol pic al començament, i explica per si
+sola que no hi ha res a filtrar. Les decisions de presentació són a
+[METODOLOGIA.md](METODOLOGIA.md) §6.
+
+**No fet, i deliberadament: el filtre.** «Mostra'm només els anys del Niño» faria
+exactament el contrari de la franja: insinuaria que hi ha alguna cosa a filtrar,
+i amb n ≈ 10 per grup el que es llegiria seria la tendència. Si algú hi torna a
+pensar, que llegeixi primer la taula de dalt.
+
+De la sèrie llarga es fa servir només GloSSAC (des del 1979), que ja cobreix tota
+la XEMA. Les reconstruccions del 1850 (CMIP7, Sato-Lacis) es van fer servir per
+comprovar que el Pinatubo és el pic més gran de la sèrie a la nostra latitud,
+però no es publiquen: el que cobreixen de més és anterior a qualsevol dada d'aquí.
+
+Quatre paranys ja trepitjats:
+
+- **La mitjana global enganya.** Cal la banda de latitud. Vegeu l'Agung.
+- **`_FillValue = 9999`.** El netCDF de Sato-Lacis acaba el 2012 però el fitxer
+  arriba al 2022 farcit. Sense emmascarar-lo surten deu anys amb SAOD = 1,0, que
+  seria un apagat de sol total.
+- **Són netCDF-3 clàssic** i el projecte no té `scipy` ni `netCDF4`. Un lector
+  en Python pur són unes 40 línies, però `tau` és variable de registre i
+  l'*offset* de cada mes no és el trivial: cal sumar la mida de registre de
+  totes les variables de registre.
+- **El conveni de desfasament de l'ENSO s'ha de declarar**, perquè decideix el
+  signe. Si es publica, va a METODOLOGIA.
+
+Estirar l'ENSO més enrere del 1950 no compra res: l'ONI net arriba fins allà i
+el SOI del CPC al 1951; per anar al 1876 cal el fitxer del BOM. Com que el
+composite modern ja dona zero, allargar-lo només allargaria una sèrie que no
+correlaciona.
+
+Per **veure** de debò aquests events a Catalunya caldria una sèrie més llarga
+que la XEMA (l'Observatori Fabra, o la sèrie homogeneïtzada de Barcelona). Això
+vol dir una segona font i encadenar sèries, que és exactament el que
+[METODOLOGIA.md](METODOLOGIA.md) §2.5 es nega a fer amb el cas de Badalona.
+Decisió oberta.
+
 ## Estacions destacades pendents de decidir
 
 Els municipis següents no tenen estació XEMA. Aquests són els millors substituts,

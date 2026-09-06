@@ -3,7 +3,7 @@
  * SVG a ma. Cada funcio rep el model ja calculat i nomes s'ocupa de pintar-lo.
  */
 
-import { state, ST, L, nf, signed, unitat, el, buida, ticks, decimalsDe,
+import { state, ST, CONTEXT, L, nf, signed, unitat, el, buida, ticks, decimalsDe,
          varInfo, unitatVar } from "./nucli.js";
 
 export function mostraTip(host, x, y, nodes) {
@@ -105,7 +105,10 @@ export function dibuixaCount(m) {
   buida(svg);
   if (!m.files.length) return;
 
-  const W = 900, H = 340, mg = { t: 14, r: 14, b: 42, l: 46 };
+  // La franja de context creix cap avall: l'àrea de barres (ih) no es mou, així
+  // que afegir-la no canvia ni una proporció del gràfic que ja hi havia.
+  const extra = CONTEXT ? CTX_ALTURA : 0;
+  const W = 900, H = 340 + extra, mg = { t: 14, r: 14, b: 42 + extra, l: 46 };
   const iw = W - mg.l - mg.r, ih = H - mg.t - mg.b;
   const banda = iw / m.files.length;
   const ample = Math.min(26, banda - 3);
@@ -166,6 +169,7 @@ export function dibuixaCount(m) {
   }
 
   etiquetesAny(svg, m.files, X, mg.t + ih + 16, iw);
+  franjaContext(svg, host, m.files, mg, ih, banda);
 
   if (m.periodes) {
     const [a, b] = m.periodes;
@@ -173,6 +177,102 @@ export function dibuixaCount(m) {
       L().saltCount(nf(a.perAny, 1), nf(b.perAny, 1),
         signed(b.perAny - a.perAny, 1), unitat());
   }
+}
+
+/* --- franja de context ------------------------------------------------------
+ *
+ * Dues coses que no són del Meteocat i que no expliquen la sèrie: l'acompanyen.
+ * Es dibuixen com a **magnitud** i no com a marca de sí/no, i el motiu és que
+ * el resultat de mesurar-les és que no hi ha res (vegeu docs/BACKLOG.md). Una
+ * franja contínua pot dibuixar que una cosa és plana; una bandera només sap dir
+ * que hi és, i cent banderes semblen un patró encara que siguin soroll.
+ *
+ * L'escala és **fixa i no depèn del que hi hagi a la vista**: el mateix color
+ * vol dir sempre el mateix valor, canviïs d'estació o de rang d'anys.
+ */
+
+// Les etiquetes de període van a ih+34, així que la franja no pot començar
+// abans de ih+52 sense que els dos textos es toquin.
+const CTX_H = 8;            // alçada d'una pista
+const CTX_ENSO_TOP = 57;
+const CTX_SAOD_TOP = 87;
+export const CTX_ALTURA = 104;  // el que la franja afegeix al marge inferior
+
+// |ONI| que satura el color. El màxim de la sèrie és 2,63 (2016).
+const CTX_ONI_MAX = 2.5;
+// Múltiples del fons que saturen. El Pinatubo del 1992 fa 16x; tot el que ha
+// vingut després no arriba a 2x, que és exactament el que s'ha de veure.
+const CTX_SAOD_MAX = 16;
+
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+
+export const faseENSO = (oni) => {
+  const t = CONTEXT?.enso_llindar ?? 0.5;
+  return oni >= t ? L().ensoNino : oni <= -t ? L().ensoNina : L().ensoNeutre;
+};
+
+/** Franja de context sota l'eix d'anys, alineada amb les mateixes barres. */
+export function franjaContext(svg, host, files, mg, ih, banda) {
+  if (!CONTEXT) return;
+  const fons = CONTEXT.saod_fons || null;
+  const x0 = mg.l, ample = banda * files.length;
+
+  const pista = (top, etiqueta) => {
+    svg.append(el("text", { x: x0, y: mg.t + ih + top - 5, fill: "var(--muted)",
+      "font-size": 10 }, etiqueta));
+    svg.append(el("rect", { x: x0, y: mg.t + ih + top, width: ample, height: CTX_H,
+      fill: "var(--ctx-zero)", rx: 2 }));
+  };
+
+  // L'etiqueta de l'ENSO fa de llegenda: els dos noms van pintats amb el seu
+  // color, així la identitat no viu només al color de les cel·les.
+  const t = el("text", { x: x0, y: mg.t + ih + CTX_ENSO_TOP - 5, fill: "var(--muted)",
+    "font-size": 10 });
+  t.append(el("tspan", {}, L().ctxEnso + " · "));
+  t.append(el("tspan", { fill: "var(--enso-calid)", "font-weight": 600 }, L().ensoNino));
+  t.append(el("tspan", {}, " / "));
+  t.append(el("tspan", { fill: "var(--enso-fred)", "font-weight": 600 }, L().ensoNina));
+  svg.append(t);
+  svg.append(el("rect", { x: x0, y: mg.t + ih + CTX_ENSO_TOP, width: ample,
+    height: CTX_H, fill: "var(--ctx-zero)", rx: 2 }));
+
+  pista(CTX_SAOD_TOP, L().ctxVolcans(nf(CONTEXT.lat_band[0], 0), nf(CONTEXT.lat_band[1], 0)));
+
+  files.forEach((f, i) => {
+    const any = String(f.any);
+    const oni = CONTEXT.enso[any];
+    const saod = CONTEXT.saod[any];
+    // 1 px de separació entre cel·les: sense ella, dos anys consecutius amb
+    // valors semblants es fonen en una taca i no es poden comptar.
+    const x = x0 + i * banda + 0.5, w = Math.max(1, banda - 1);
+
+    if (oni != null) {
+      svg.append(el("rect", { x, y: mg.t + ih + CTX_ENSO_TOP, width: w, height: CTX_H,
+        fill: oni >= 0 ? "var(--enso-calid)" : "var(--enso-fred)",
+        "fill-opacity": clamp01(Math.abs(oni) / CTX_ONI_MAX).toFixed(3) }));
+    }
+    if (saod != null && fons) {
+      svg.append(el("rect", { x, y: mg.t + ih + CTX_SAOD_TOP, width: w, height: CTX_H,
+        fill: "var(--saod-alt)",
+        "fill-opacity": clamp01((saod / fons - 1) / (CTX_SAOD_MAX - 1)).toFixed(3) }));
+    }
+
+    // Una sola zona sensible per any que cobreix les dues pistes: són 8 px
+    // d'alçada i encertar-les amb el ratolí una per una seria hostil.
+    const hit = el("rect", { x: x0 + i * banda, y: mg.t + ih + CTX_ENSO_TOP - 4,
+      width: banda, height: CTX_SAOD_TOP - CTX_ENSO_TOP + CTX_H + 8, fill: "transparent" });
+    hit.addEventListener("pointerenter", () => {
+      const nodes = [titolTip(any)];
+      nodes.push(linia(oni == null ? `${L().ctxEnso}: ${L().ctxSenseDada}`
+        : `${L().ctxEnso} ${CONTEXT.enso_season} ${signed(oni, 2)} · ${faseENSO(oni)}`));
+      nodes.push(document.createElement("br"));
+      nodes.push(linia(saod == null || !fons ? `${L().ctxVolcansCurt}: ${L().ctxSenseDada}`
+        : `${L().ctxVolcansCurt} ${nf(saod, 4)} · ${L().ctxCopsFons(nf(saod / fons, 1))}`));
+      mostraTip(host, x0 + i * banda + banda / 2, mg.t + ih + CTX_ENSO_TOP - 10, nodes);
+    });
+    hit.addEventListener("pointerleave", () => amagaTip(host));
+    svg.append(hit);
+  });
 }
 
 /** Etiquetes d'any: totes les que hi càpiguen, i abans d'ometre'n cap, escurçar-les.

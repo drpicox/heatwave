@@ -26,6 +26,15 @@
   --a-tx: #eb6834;
   --accent: var(--a-tn);
 
+  /* Franja de context. Divergent per a l'ENSO (dos pols i gris neutre al mig,
+   * mai un to al centre) i seqüencial d'un sol to per a l'aerosol volcànic.
+   * El vermell és carmí i no taronja a propòsit: amb el taronja de la màxima
+   * seleccionat, un pol taronja seria indistingible de les barres. */
+  --enso-calid: #b0324c;
+  --enso-fred:  #2b6ca3;
+  --ctx-zero:   #e3e7e5;
+  --saod-alt:   #7a5c33;
+
   --display: Superclarendon, "Rockwell", "Roboto Slab", "Bookman Old Style", Georgia, serif;
   --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
@@ -48,10 +57,20 @@
     --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
     --a-tn: #9085e9;
     --a-tx: #d95926;
+    /* Els passos del fosc es trien, no s'inverteixen: aquests estan validats
+     * contra la superfície fosca, no contra la clara. */
+    --enso-calid: #c8454e;
+    --enso-fred:  #4a93cf;
+    --ctx-zero:   #262d31;
+    --saod-alt:   #c2a05e;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --enso-calid: #c8454e;
+  --enso-fred:  #4a93cf;
+  --ctx-zero:   #262d31;
+  --saod-alt:   #c2a05e;
   --plane:     #0e1214;
   --surface:   #171c1f;
   --surface-2: #1e2427;

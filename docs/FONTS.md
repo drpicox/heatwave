@@ -50,6 +50,36 @@ Compte si en fas servir més: a `7bvh-jvq2` el camp `codi_variable` és **numèr
 (`codi_variable=1002`), mentre que a `nzvn-apee` és **text**
 (`codi_variable='32'`).
 
+## Fonts externes: la franja de context
+
+Sota el gràfic d'anys hi ha dues pistes que **no són del Meteocat** i que no
+mesuren res de Catalunya: acompanyen la sèrie, no l'expliquen. Es publiquen a
+`site/data/context.json` (2 KB) i es refresquen amb la resta.
+
+| dataset | font | ús |
+|---|---|---|
+| [Oceanic Niño Index (ONI)](https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt) | NOAA Climate Prediction Center | fase i intensitat d'El Niño / la Niña |
+| [GloSSAC v2.24](https://data.giss.nasa.gov/modelforce/strataer/) | NASA (servit per NASA GISS) | aerosol volcànic estratosfèric |
+
+Totes dues són obertes: l'ONI és obra del govern dels EUA i per tant de domini
+públic, i el GloSSAC es distribueix per al seu ús lliure amb citació. El
+compromís d'aquest projecte és el mateix que amb el Meteocat: no s'alteren els
+valors i s'enllaça la font.
+
+De l'ONI es publica la temporada **DJF**, i del GloSSAC la mitjana anual de la
+profunditat òptica a 550 nm ponderada per àrea entre **38 i 46° N**, que és la
+franja de latitud d'aquí. **No la mitjana global**: l'aerosol no es reparteix per
+igual entre hemisferis, i l'Agung del 1963 —un dels grans del segle XX— no
+arriba aquí ni a quatre vegades el fons. Amb la mitjana global algú conclouria
+que aquell any va passar alguna cosa.
+
+Els fitxers són netCDF-3 clàssic. El pipeline en porta un lector propi de mig
+centenar de línies (`pipeline/events.py`) en comptes d'afegir `scipy` o
+`netCDF4` a les dependències per llegir 334 KB un cop per setmana.
+
+Per què això és context i no una explicació, amb els números de la mesura, a
+[BACKLOG.md](BACKLOG.md).
+
 ## Condicions d'ús
 
 El portal no publica aquestes dades sota una llicència oberta estàndard tipus

@@ -32,12 +32,18 @@ export const state = {
  * l'ultim valor sense haver-les de passar per parametre a cada crida. */
 export let META = null, INDEX = null, ST = null, COMPLETESA = 0.95;
 
+/* Context global (ENSO i aerosol volcanic). Es opcional a proposit: si el
+ * pipeline no l'ha pogut baixar, la franja no es dibuixa i la resta de la
+ * pagina no se n'assabenta. */
+export let CONTEXT = null;
+
 export function setCatalog(meta, index) {
   META = meta;
   INDEX = index;
   COMPLETESA = meta.qc?.rules?.year_completeness ?? 0.95;
 }
 export function setEstacio(st) { ST = st; }
+export function setContext(c) { CONTEXT = c; }
 
 export const L = () => I18N[state.lang];
 

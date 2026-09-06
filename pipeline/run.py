@@ -10,7 +10,7 @@ import socketserver
 import sys
 import time
 
-from . import build, config, fetch, quality
+from . import build, config, events, fetch, quality
 from .socrata import Client
 
 
@@ -128,6 +128,15 @@ def main(argv=None):
         geo_path.write_text(
             json.dumps(geo.build(client), ensure_ascii=False, separators=(",", ":")),
             encoding="utf-8")
+
+    # Context global: dues fonts petites que no son del Meteocat i que nomes
+    # acompanyen les series. Si no es poden baixar, es publica sense franja: el
+    # web no depen d'aixo i no val la pena aturar-ho tot per 360 KB.
+    if not args.skip_fetch:
+        print("==> context global (ENSO i aerosol volcanic)")
+        mida = events.write()
+        if mida:
+            print(f"    context.json      {mida/1024:>9,.0f} KB")
 
     print("==> escrivint site/data")
     build.build_all(daily, stations, cov, estat_report, filter_report, source_updated)

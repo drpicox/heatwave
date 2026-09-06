@@ -12,7 +12,7 @@
  * a deu anys i des d'una còpia local.
  */
 
-import { state, setCatalog, setEstacio, INDEX, L } from "./nucli.js";
+import { state, setCatalog, setEstacio, setContext, INDEX, L } from "./nucli.js";
 import { model } from "./model.js";
 import { dibuixaHist, dibuixaCount, dibuixaMean, dibuixaHeat } from "./grafics.js";
 import { dibuixaText, dibuixaTaula, peu } from "./panells.js";
@@ -89,11 +89,14 @@ async function carregaMapa() {
 }
 
 (async function () {
-  const [meta, index] = await Promise.all([
+  const [meta, index, context] = await Promise.all([
     fetch("data/meta.json").then((r) => r.json()),
     fetch("data/index.json").then((r) => r.json()),
+    // 2 KB, i si falta no passa res: la franja de context simplement no surt.
+    fetch("data/context.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
   ]);
   setCatalog(meta, index);
+  setContext(context);
 
   llegeixHash();
   // Badalona-Museu per defecte: és l'estació que va originar el projecte.

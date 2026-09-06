@@ -201,6 +201,7 @@ El que sí que es publica:
 | `data/st/<CODI>.json` | la fitxa sencera d'una estació (~36 KB) |
 | `data/meta.json` | dates, atribució i comptadors del control de qualitat |
 | `data/comarques.json` | contorn comarcal simplificat, per a la vista de mapa |
+| `data/context.json` | ENSO i aerosol volcànic any a any, per a la franja de context (~2 KB) |
 | `data/map-*.json` | histogrames mensuals de totes les estacions, per a la vista de mapa |
 | `data/stations.json`, `data/hist-*.json` | agregats de totes les estacions alhora, per a comparacions futures |
 
@@ -303,7 +304,56 @@ Per això, al web, tota tendència va acompanyada del seu període, i el compara
 retalla automàticament a la finestra comuna a totes les estacions
 seleccionades i ho diu de manera visible.
 
-## 6. Limitacions que has de conèixer
+## 6. La franja de context
+
+Sota el gràfic d'anys hi ha dues pistes: El Niño / la Niña i l'aerosol volcànic
+estratosfèric. **No expliquen la sèrie.** Hi són perquè són les dues preguntes
+que fa tothom davant d'una sèrie que puja, i perquè totes dues estan mesurades i
+la resposta és que no.
+
+### Es dibuixa la magnitud, no una categoria
+
+No hi ha marques de «any del Niño sí / no», i és una decisió i no una mandra. Una
+marca és binària i afirma que allò és rellevant; amb l'ENSO en sortirien
+marcats un 40 % dels anys i el lector hi buscaria el patró que la mesura diu que
+no hi és. Amb els volcans seria pitjor: en tota la sèrie hi hauria **una sola
+marca**, i una marca solitària sembla decoració.
+
+Una franja contínua, en canvi, pot dibuixar que una cosa és **plana**, que és
+precisament el resultat. L'escala de color és fixa i no depèn del que hi hagi a
+la vista: el mateix color vol dir sempre el mateix valor, canviïs d'estació o de
+rang d'anys.
+
+### El conveni de desfasament de l'ENSO
+
+Un episodi d'El Niño fa el màxim cap al desembre–febrer i la resposta de la
+temperatura global va tres a sis mesos enrere. Aquí s'etiqueta cada any amb
+l'**ONI de la temporada DJF que hi comença el gener**: DJF 1998 (des. 1997 –
+feb. 1998, el pic del Niño del 1997-98) etiqueta l'any **1998**.
+
+Això no és un detall d'implementació, és tota la conclusió. Compostant la mínima
+estival de 2006–2025 amb aquest conveni, els estius del Niño surten **0,44 °C
+més freds**; amb l'ONI simultani de juny–agost, **0,28 °C més calents**. Mateixes
+dades, signe oposat. Per això el conveni va escrit i no implícit.
+
+En cap de les finestres provades la diferència arriba a la variabilitat
+interanual, i el signe no és estable. Els números són a
+[BACKLOG.md](BACKLOG.md).
+
+### El volcà, i per què no se'n pot dir res
+
+El criteri no és el VEI sinó el sofre que arriba a l'estratosfera: l'erupció de
+l'Eyjafjallajökull (2010) va tancar l'espai aeri d'Europa i a la nostra latitud
+dona **menys que la mitjana del registre**, perquè la ploma es va quedar a la
+troposfera.
+
+En tota la sèrie de la XEMA hi ha **un sol event**: el Pinatubo, que a 38–46° N
+fa el 1992 unes setze vegades el fons. És, de fet, el pic més gran des del 1850
+en aquesta franja de latitud. I cau el quart any de la sèrie, quan la xarxa tenia
+**nou estacions amb l'estiu complet**. És l'única cosa que valdria la pena mirar
+i és justament la que no es pot mirar.
+
+## 7. Limitacions que has de conèixer
 
 **Les sèries no estan homogeneïtzades.** Els canvis d'instrument, de garita, de
 manteniment o d'entorn immediat de l'estació poden produir salts que no tenen res
@@ -324,7 +374,7 @@ i, si escau, al Servei Meteorològic de Catalunya.
 operatives ara que el 1990. Qualsevol comparació entre estacions ha de fer-se
 estació a estació i mai agregant tota la xarxa en un sol número.
 
-## 7. Reproduir-ho
+## 8. Reproduir-ho
 
 Tot el que hi ha al web surt de `./dothething.sh`, que descarrega, filtra, calcula i
 escriu `site/data/`. El fitxer `site/data/meta.json` porta la data de generació,

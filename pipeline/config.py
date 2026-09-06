@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / "cache"
 DAILY_CACHE = CACHE / "daily"
+CONTEXT_CACHE = CACHE / "context"
 # Les variables derivades no es poden reconstruir sense tornar a baixar 54
 # milions de files, i ocupen poc. Van al repositori, no al cache.
 DERIVED_DIR = ROOT / "derived"
@@ -88,6 +89,28 @@ DERIVADES = {"wb"}
 
 # Primer dia amb dada a tot el dataset (verificat: min(data_lectura) = 1988-09-01).
 FIRST_YEAR = 1988
+
+# --- Context global ------------------------------------------------------------
+#
+# Dues fonts externes que NO son del Meteocat i que no expliquen res de les
+# series: nomes les acompanyen. Vegeu pipeline/events.py i docs/BACKLOG.md.
+
+ONI_URL = "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt"
+# GloSSAC es mesura de satel.lit i arrenca el 1979, o sigui tota la serie de la
+# XEMA i onze anys mes. Les reconstruccions llargues (CMIP7, Sato-Lacis) arriben
+# al 1850 pero no calen aqui: el que cobreixen de mes es anterior a la XEMA.
+SAOD_URL = "https://data.giss.nasa.gov/modelforce/strataer/data/tau_reff_GloSSAC.v2.24.nc"
+
+# La franja de latitud d'aqui, no la mitjana global. L'aerosol no es reparteix
+# per igual entre hemisferis i la mitjana global enganya: vegeu l'Agung del 1963.
+CONTEXT_LAT_BAND = (38.0, 46.0)
+
+# Temporada de l'ONI que etiqueta l'any. DJF 1998 = des. 1997 - feb. 1998, el pic
+# del Nino del 1997-98, i l'estiu que li correspon es el del 1998.
+ONI_SEASON = "DJF"
+# Llindar amb que la NOAA declara episodi. Aqui nomes serveix per posar-hi nom
+# al tooltip: la franja dibuixa el valor, no la categoria.
+ENSO_LLINDAR = 0.5
 
 # --- Control de qualitat -----------------------------------------------------
 
