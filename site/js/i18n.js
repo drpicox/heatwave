@@ -34,8 +34,9 @@ export const I18N = {
       wb_perillos: "Bulb humit perillós",
     },
     nom: "Català",
+    eyebrowTitle: (d) => `Darrera actualització de la font: ${d}`,
     codi: "ca",
-    eyebrow: (y0, y1) => `XEMA · METEOCAT · ${y0}–${y1}`,
+    eyebrow: (y0, y1, act) => `XEMA · METEOCAT · ${y0}–${y1} (${act})`,
     h1: "Quantes nits l'any passa això?",
     lede: (n) =>
       `Registres diaris de ${n} estacions de Catalunya. Tria una estació, una variable i ` +
@@ -164,8 +165,9 @@ export const I18N = {
       wb_perillos: "Bulbo húmedo peligroso",
     },
     nom: "Castellano",
+    eyebrowTitle: (d) => `Última actualización de la fuente: ${d}`,
     codi: "es",
-    eyebrow: (y0, y1) => `XEMA · METEOCAT · ${y0}–${y1}`,
+    eyebrow: (y0, y1, act) => `XEMA · METEOCAT · ${y0}–${y1} (${act})`,
     h1: "¿Cuántas noches al año pasa esto?",
     lede: (n) =>
       `Registros diarios de ${n} estaciones de Cataluña. Elige una estación, una variable y ` +
@@ -294,8 +296,9 @@ export const I18N = {
       wb_perillos: "Dangerous wet-bulb",
     },
     nom: "English",
+    eyebrowTitle: (d) => `Source last updated: ${d}`,
     codi: "en",
-    eyebrow: (y0, y1) => `XEMA · METEOCAT · ${y0}–${y1}`,
+    eyebrow: (y0, y1, act) => `XEMA · METEOCAT · ${y0}–${y1} (${act})`,
     h1: "How many nights a year does this happen?",
     lede: (n) =>
       `Daily records from ${n} weather stations in Catalonia. Pick a station, a variable and ` +

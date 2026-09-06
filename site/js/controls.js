@@ -5,7 +5,8 @@
  */
 
 import { I18N, SEASONS, BANDERES } from "./i18n.js";
-import { state, META, INDEX, ST, L, nf, thrText, buida, varInfo } from "./nucli.js";
+import { state, META, INDEX, ST, L, nf, thrText, buida, varInfo,
+         dataCurta, dataHora } from "./nucli.js";
 
 /* Els controls no coneixen el render: el reben a initControls i el guarden aquí.
  * Sense això, els gestors que es creen fora d'initControls -- els xips de
@@ -40,7 +41,12 @@ export function textosFixos() {
   const t = L();
   document.documentElement.lang = t.codi;
   const anys = INDEX.reduce((a, s) => [Math.min(a[0], s.y0), Math.max(a[1], s.y1)], [9999, 0]);
-  document.getElementById("x-eyebrow").textContent = t.eyebrow(anys[0], anys[1]);
+  // La cinta ja diu d'on surten les dades i fins quan arriben; hi afegim el dia
+  // exacte de l'ultima actualitzacio, que abans nomes es veia al peu de tot.
+  const act = new Date(META.source_last_updated);
+  const cinta = document.getElementById("x-eyebrow");
+  cinta.textContent = t.eyebrow(anys[0], anys[1], dataCurta(act));
+  cinta.title = t.eyebrowTitle(dataHora(act));
   document.getElementById("x-h1").textContent = t.h1;
   document.getElementById("x-lede").textContent = t.lede(nf(INDEX.length));
   const set = (id, v) => { document.getElementById(id).textContent = v; };

@@ -41,6 +41,11 @@ export function setEstacio(st) { ST = st; }
 
 export const L = () => I18N[state.lang];
 
+/** L'etiqueta d'idioma per a Intl. La pagina en te tres i el castella tambe
+ *  vol la seva: escriu "6 sept", no "6 Sept". */
+export const locale = () =>
+  ({ ca: "ca-ES", es: "es-ES", en: "en-GB" })[state.lang] ?? "en-GB";
+
 export const nf = (x, d = 0) =>
   new Intl.NumberFormat(state.lang === "ca" ? "ca-ES" : "en-GB",
     { minimumFractionDigits: d, maximumFractionDigits: d }).format(x);
@@ -106,3 +111,12 @@ export function dataLlarga(iso) {
   return new Intl.DateTimeFormat(state.lang === "ca" ? "ca-ES" : "en-GB", { dateStyle: "long" })
     .format(new Date(Date.UTC(y, m - 1, d)));
 }
+
+/** Dia i mes, per a la cinta de dalt: "6 de set.". Rep una data, no una cadena
+ *  ISO de dia, perque la marca de la font porta hora. */
+export const dataCurta = (d) =>
+  new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short" }).format(d);
+
+/** La mateixa marca, sencera, per al titol emergent de la cinta. */
+export const dataHora = (d) =>
+  new Intl.DateTimeFormat(locale(), { dateStyle: "long", timeStyle: "short" }).format(d);
